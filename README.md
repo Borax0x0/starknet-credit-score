@@ -1,81 +1,95 @@
-# Starknet Credit Score
+# 🏦 Starknet Credit Score
 
-AI-generated credit score and personality profile based on your Starknet wallet activity.
+> **Your wallet has a reputation. Find out what it says.**
 
-## Features
+A web app that turns any Starknet wallet address into an AI-generated credit score and personality profile — shareable as a card on Twitter/X.
 
-- Paste any Starknet wallet address to analyze
-- Get a credit score (0-850) based on on-chain metrics
-- AI-generated personality type (e.g., "Active Trader", "Diamond Hand")
-- Connect wallet via Starkzap (Cartridge Controller)
-- Downloadable shareable card
+🔗 **Live App:** [your-vercel-url-here]
 
-## Stack
+---
 
-- Next.js (App Router)
-- Tailwind CSS
-- Starkzap SDK (wallet connection)
-- starknet.js (on-chain data)
-- Groq / Llama 3.3 70B (AI personality)
-- html2canvas (card download)
+## What it does
 
-## Getting Started
+Paste any Starknet wallet address and get:
 
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+- **A credit score (0–850)** based on real on-chain activity
+- **An AI-generated personality type** — are you a Diamond Hand, a Ghost Wallet, or a Degen Trader?
+- **A shareable card** — download as PNG and flex on Twitter
 
-3. Copy `.env.local.example` to `.env.local` and add your Groq API key:
-   ```bash
-   cp .env.local.example .env.local
-   ```
-   Get a free API key at [console.groq.com](https://console.groq.com)
+No wallet required to look up any address. Connect your own wallet via Starkzap to analyze yourself instantly.
 
-4. Run the development server:
-   ```bash
-   npm run dev
-   ```
+---
 
-5. Open [http://localhost:3000](http://localhost:3000)
+## Screenshots
 
-## Environment Variables
+> *(add screenshots here)*
 
-- `GROQ_API_KEY` - Your Groq API key for AI personality generation
+---
 
-## How It Works
+## How the score is calculated
 
-1. **Enter a wallet address** or connect via Starkzap
-2. **On-chain metrics are fetched** from Starknet mainnet:
-   - Transaction count (via nonce)
-   - STRK and USDC balances
-   - Wallet deployment status
-3. **Credit score is calculated** (0–850) based on activity
-4. **AI generates a personality** using Llama 3.3 via Groq
-5. **Download and share** your score card
+| Metric | How it's measured |
+|--------|------------------|
+| Wallet age | First deployment date |
+| Transaction count | Nonce as proxy via standard RPC |
+| Asset diversity | Unique tokens held |
+| Holdings | STRK + USDC balances |
+| Recent activity | Days since last transaction |
 
-## Score Tiers
+**Score tiers:**
+- 750–850 → 💎 Excellent
+- 650–749 → 🟢 Good
+- 550–649 → 🟡 Fair
+- 400–549 → 🟠 Poor
+- 300–399 → 👻 Ghost Wallet
 
-| Score | Tier |
-|-------|------|
-| 750+ | Excellent |
-| 700–749 | Very Good |
-| 650–699 | Good |
-| 600–649 | Fair |
-| Below 600 | Poor |
+---
 
-## Challenge Submission
+## Tech Stack
 
-This project is built for the Starkzap Developer Challenge.
+- **Next.js** (App Router) + TypeScript
+- **Starkzap SDK** — wallet connection via Cartridge Controller
+- **Starknet.js** — on-chain data fetching
+- **Groq API** (llama-3.3-70b) — AI personality generation
+- **html2canvas** — shareable card download
+- **Vercel** — deployment
 
-### Submission Checklist
+---
 
-- [x] Public GitHub repository
-- [x] README.md complete
-- [ ] Live app link working
-- [ ] PR raised on `awesome-starkzap` repo
+## Built with Starkzap
 
-## License
+This project uses Starkzap for:
+- **Wallet connection** — one-click social login via Cartridge Controller (no seed phrases)
+- **On-chain data** — reading balances and wallet state
+- **Account abstraction** — seamless UX for users new to crypto
 
-MIT
+---
+
+## Running locally
+
+```bash
+git clone https://github.com/Borax0x0/starknet-credit-score
+cd Projects/starknet_credit_score
+npm install
+```
+
+Create a `.env.local` file:
+
+```env
+NEXT_PUBLIC_STARKNET_RPC_URL=your_zan_or_alchemy_rpc_url
+GROQ_API_KEY=your_groq_api_key
+```
+
+Then:
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000)
+
+---
+
+## Submission
+
+Built for the [Starkzap Developer Challenge](https://forms.reform.app/starkware/StarkzapChallenge/4tabca) — Feb 24 to Mar 17, 2025.
