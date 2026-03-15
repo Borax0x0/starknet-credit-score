@@ -9,13 +9,15 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@types/three": "^0.183.1",
     "axios": "^1.13.6",
     "html2canvas": "^1.4.1",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "starknet": "^9.4.2",
-    "starkzap": "^1.0.0"
+    "starkzap": "^1.0.0",
+    "three": "^0.183.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

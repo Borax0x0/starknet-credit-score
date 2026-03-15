@@ -1,26 +1,89 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0a0f;
+  --foreground: #ededed;
+  --card-bg: #111118;
+  --card-border: #1e1e2e;
+  --primary: #7c3aed;
+  --secondary: #f97316;
+  --surface: #12121a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-card-bg: var(--card-bg);
+  --color-card-border: var(--card-border);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-surface: var(--surface);
+  --font-sans: 'Space Grotesk', sans-serif;
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.neon-glow {
+  box-shadow: 0 0 20px rgba(124, 59, 237, 0.4), inset 0 0 20px rgba(124, 59, 237, 0.2);
+}
+
+.text-gradient {
+  background: linear-gradient(to right, #7c3aed, #f97316);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.border-gradient-purple {
+  border: 2px solid transparent;
+  background-image: linear-gradient(#0a0a0f, #0a0a0f), radial-gradient(circle at top left, #7c3aed, #3b82f6);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+.glow-purple {
+  box-shadow: 0 0 15px rgba(124, 59, 237, 0.15);
+}
+
+.glow-purple:hover {
+  box-shadow: 0 0 25px rgba(124, 59, 237, 0.3);
+}
+
+.score-ring-green {
+  box-shadow: 0 0 60px rgba(34, 197, 94, 0.5), 0 0 120px rgba(34, 197, 94, 0.3), inset 0 0 60px rgba(34, 197, 94, 0.1);
+}
+
+.score-ring-blue {
+  box-shadow: 0 0 60px rgba(59, 130, 246, 0.5), 0 0 120px rgba(59, 130, 246, 0.3), inset 0 0 60px rgba(59, 130, 246, 0.1);
+}
+
+.score-ring-yellow {
+  box-shadow: 0 0 60px rgba(234, 179, 8, 0.5), 0 0 120px rgba(234, 179, 8, 0.3), inset 0 0 60px rgba(234, 179, 8, 0.1);
+}
+
+.score-ring-red {
+  box-shadow: 0 0 60px rgba(239, 68, 68, 0.5), 0 0 120px rgba(239, 68, 68, 0.3), inset 0 0 60px rgba(239, 68, 68, 0.1);
+}
+
+.dna-canvas-glow {
+  filter: drop-shadow(0 0 20px rgba(124, 58, 237, 0.4)) drop-shadow(0 0 40px rgba(124, 58, 237, 0.2));
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin 3s linear infinite;
+}
+
+@media (max-width: 768px) {
+  .animate-spin-slow {
+    animation: none;
+  }
 }
