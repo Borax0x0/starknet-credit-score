@@ -17,9 +17,9 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             metrics: {
                 ...metrics,
-                // Serialize dates as ISO strings
-                lastActivityDate: metrics.lastActivityDate.toISOString(),
-                firstTxDate: metrics.firstTxDate.toISOString(),
+                // Serialize dates as ISO strings if they exist
+                lastActivityDate: metrics.lastActivityDate?.toISOString(),
+                firstTxDate: metrics.firstTxDate?.toISOString() ?? null,
             },
             score,
             tier,
