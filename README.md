@@ -4,7 +4,7 @@
 
 A web app that turns any Starknet wallet address into an AI-generated credit score and personality profile — shareable as a card on Twitter/X.
 
-🔗 **Live App:** [your-vercel-url-here]
+🔗 **Live App:** https://starknet-credit-score.vercel.app
 
 ---
 

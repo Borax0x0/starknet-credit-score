@@ -23,9 +23,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const prompt = `Given this Starknet wallet data: wallet age: ${metrics.walletAgeDays} days, transaction count: ${metrics.txCount}, unique tokens: ${metrics.uniqueTokens}, has STRK: ${metrics.hasSTRK}, has USDC: ${metrics.hasUSDC}, days since last transaction: ${metrics.daysSinceLastTx}
+    const prompt = `You are a witty crypto analyst. Given this wallet data: 
+wallet age: ${metrics.walletAgeDays} days, tx count: ${metrics.txCount}, unique tokens: ${metrics.uniqueTokens}, has STRK: ${metrics.hasSTRK}, has USDC: ${metrics.hasUSDC}, days since last tx: ${metrics.daysSinceLastTx}
 
-Generate a 2-word crypto personality type (like "Diamond Hand", "Yield Farmer", "Ghost Wallet", "Degen Trader", "Cautious Accumulator", "Active Trader", "HODLer") and one sentence explaining it.
+Write a punchy 2-word personality type (e.g. Diamond Hand, Ghost Wallet, Chaos Agent, Silent Accumulator) and ONE sentence description that is specific, a little funny, and feels human. 
+Never use the words "frequent", "engagement", or "categorized".
+
 Return ONLY valid JSON with this exact format: { "type": "...", "description": "..." }`;
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
