@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useWalletAnalysis } from '@/lib/useWalletAnalysis';
+import { WalletDNA } from '@/components/WalletDNA';
 
 interface Props {
   params: Promise<{ address: string }>;
@@ -16,12 +17,54 @@ export default function ScoreContent({ params }: Props) {
 
   const { metrics, score, tier, personality, loading, error } = useWalletAnalysis(address);
 
+  // Loading messages that cycle every second
+  const loadingMessages = [
+    'Scanning the chain...',
+    'Judging your financial decisions...',
+    'Consulting the blockchain gods...',
+    'Almost there...',
+  ];
+
+  const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
+  const [fade, setFade] = useState(true);
+
+  useEffect(() => {
+    if (!loading) return;
+    const interval = setInterval(() => {
+      setFade(false); // trigger fade out
+      setTimeout(() => {
+        setLoadingMsgIndex((prev) => (prev + 1) % loadingMessages.length);
+        setFade(true); // trigger fade in
+      }, 300); // wait for fade-out before switching text
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [loading, loadingMessages.length]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-zinc-900 to-black text-white flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-zinc-400">Analyzing wallet...</p>
+        <style>{`
+          @keyframes loadingFade {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          .loading-fade-in {
+            animation: loadingFade 0.3s ease-out forwards;
+          }
+          .loading-fade-out {
+            opacity: 0;
+            transform: translateY(-6px);
+            transition: opacity 0.3s ease-in, transform 0.3s ease-in;
+          }
+        `}</style>
+        <div className="text-center space-y-6">
+          <div className="w-14 h-14 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p
+            className={`text-lg text-zinc-300 font-medium min-h-[2em] ${fade ? 'loading-fade-in' : 'loading-fade-out'}`}
+            key={loadingMsgIndex}
+          >
+            {loadingMessages[loadingMsgIndex]}
+          </p>
         </div>
       </div>
     );
@@ -67,6 +110,12 @@ export default function ScoreContent({ params }: Props) {
           <p className="font-mono text-lg">{address.slice(0, 10)}...{address.slice(-8)}</p>
         </div>
 
+        {metrics && (
+          <div className="flex justify-center mb-8">
+            <WalletDNA address={address} metrics={metrics} size={320} />
+          </div>
+        )}
+
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 md:p-8 text-center space-y-6">
           <div className="space-y-2">
             <p className="text-zinc-400">Credit Score</p>
@@ -90,18 +139,30 @@ export default function ScoreContent({ params }: Props) {
             <MetricCard label="Wallet Age" value={`${metrics.walletAgeDays} days`} />
             <MetricCard label="Transactions" value={metrics.txCount.toString()} />
             <MetricCard label="Unique Tokens" value={metrics.uniqueTokens.toString()} />
-            <MetricCard label="Days Inactive" value={metrics.daysSinceLastTx.toString()} />
+            <MetricCard label="Days Inactive" value={metrics.daysSinceLastTx !== null ? metrics.daysSinceLastTx.toString() : 'Unknown'} />
             <MetricCard label="STRK Balance" value={formatBalance(metrics.strkBalance)} />
             <MetricCard label="USDC Balance" value={formatBalance(metrics.usdcBalance, 6)} />
           </div>
         )}
 
-        <a
-          href={`/card/${address}`}
-          className="block w-full bg-gradient-to-r from-amber-500 to-orange-500 text-black font-semibold py-4 px-6 rounded-xl text-center hover:from-amber-400 hover:to-orange-400 transition-all"
-        >
-          Share Card
-        </a>
+        <div className="flex gap-4">
+          <a
+            href={`/card/${address}`}
+            className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 text-black font-semibold py-4 px-6 rounded-xl text-center hover:from-amber-400 hover:to-orange-400 transition-all"
+          >
+            Share Card
+          </a>
+          <a
+            href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
+              `My Starknet wallet is a ${personality?.type || 'mystery'} with a credit score of ${score} 👀 What's yours? https://starknet-creditscore.vercel.app #Starknet #StarkzapChallenge`
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold py-4 px-6 rounded-xl text-center transition-all border border-zinc-700"
+          >
+            Share on 𝕏
+          </a>
+        </div>
       </div>
     </div>
   );

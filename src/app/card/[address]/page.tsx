@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import html2canvas from 'html2canvas';
 import { useWalletAnalysis } from '@/lib/useWalletAnalysis';
+import { WalletDNA } from '@/components/WalletDNA';
 
 export default function CardPage({ params }: { params: Promise<{ address: string }> }) {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -23,7 +24,7 @@ export default function CardPage({ params }: { params: Promise<{ address: string
         useCORS: true,
       });
       const link = document.createElement('a');
-      link.download = `starknet-score-${address.slice(0, 8)}.png`;
+      link.download = `starknet-score-${address.slice(0, 6)}...${address.slice(-4)}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
     } catch (err) {
@@ -76,6 +77,12 @@ export default function CardPage({ params }: { params: Promise<{ address: string
             {address.slice(0, 6)}...{address.slice(-4)}
           </p>
         </div>
+
+        {metrics && (
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <WalletDNA address={address} metrics={metrics} size={280} />
+          </div>
+        )}
 
         <div style={{ textAlign: 'center', padding: '16px 0' }}>
           <p style={{ fontSize: '60px', fontWeight: 'bold', color: '#ffffff', lineHeight: 1 }}>{score}</p>
