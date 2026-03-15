@@ -1,10 +1,16 @@
 import { Suspense } from 'react';
 import ScoreContent from './ScoreContent';
 
-export default function ScorePage({ params }: { params: Promise<{ address: string }> }) {
+export default function ScorePage({ 
+  params,
+  searchParams 
+}: { 
+  params: Promise<{ address: string }>;
+  searchParams: Promise<{ network?: string }>;
+}) {
   return (
     <Suspense fallback={<LoadingState />}>
-      <ScoreContent params={params} />
+      <ScoreContent params={params} searchParams={searchParams} />
     </Suspense>
   );
 }

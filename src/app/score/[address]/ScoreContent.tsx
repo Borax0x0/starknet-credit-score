@@ -3,19 +3,47 @@
 import { useState, useEffect } from 'react';
 import { useWalletAnalysis } from '@/lib/useWalletAnalysis';
 import { WalletDNA } from '@/components/WalletDNA';
+import { StakePanel } from '@/components/StakePanel';
 
 interface Props {
   params: Promise<{ address: string }>;
+  searchParams?: Promise<{ network?: string }>;
 }
 
-export default function ScoreContent({ params }: Props) {
+export default function ScoreContent({ params, searchParams }: Props) {
   const [address, setAddress] = useState('');
+  const [network, setNetwork] = useState<'mainnet' | 'sepolia'>('mainnet');
+  const [connectedAddress, setConnectedAddress] = useState<string | null>(null);
+  const [checkingConnection, setCheckingConnection] = useState(true);
 
   useEffect(() => {
     params.then((p) => setAddress(p.address));
   }, [params]);
 
+  useEffect(() => {
+    if (searchParams) {
+      searchParams.then((s) => {
+        setNetwork(s.network === 'sepolia' ? 'sepolia' : 'mainnet');
+      });
+    }
+  }, [searchParams]);
+
+  // Check if user has connected wallet - simplified approach
+  const isConnectedWallet = async (addr: string) => {
+    try {
+      const { StarkZap } = await import('starkzap');
+      const sdk = new StarkZap({ network });
+      const wallet = await sdk.connectCartridge();
+      const connectedAddr = wallet.address.toString().toLowerCase();
+      return connectedAddr === addr.toLowerCase();
+    } catch {
+      return false;
+    }
+  };
+
   const { metrics, score, tier, personality, loading, error } = useWalletAnalysis(address);
+  const [staked, setStaked] = useState(false);
+  const [showStakePanel, setShowStakePanel] = useState(false);
 
   // Loading messages that cycle every second
   const loadingMessages = [
@@ -142,6 +170,49 @@ export default function ScoreContent({ params }: Props) {
             <MetricCard label="Days Inactive" value={metrics.daysSinceLastTx !== null ? metrics.daysSinceLastTx.toString() : 'Unknown'} />
             <MetricCard label="STRK Balance" value={formatBalance(metrics.strkBalance)} />
             <MetricCard label="USDC Balance" value={formatBalance(metrics.usdcBalance, 6)} />
+          </div>
+        )}
+
+        {metrics && showStakePanel && !staked && (
+          <StakePanel 
+            walletAddress={address}
+            strkBalance={metrics.strkBalance}
+            network={network}
+            onStakeSuccess={() => setStaked(true)} 
+          />
+        )}
+
+        {metrics && !staked && !showStakePanel && (
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
+            <p className="text-zinc-400 text-center">
+              🔐 Connect your wallet to stake and boost your score
+            </p>
+            <button
+              onClick={async () => {
+                try {
+                  const { StarkZap } = await import('starkzap');
+                  const sdk = new StarkZap({ network });
+                  const wallet = await sdk.connectCartridge();
+                  const connectedAddr = wallet.address.toString().toLowerCase();
+                  if (connectedAddr !== address.toLowerCase()) {
+                    alert('Please connect the wallet you are viewing');
+                    return;
+                  }
+                  setShowStakePanel(true);
+                } catch (err) {
+                  console.error('Connection failed:', err);
+                }
+              }}
+              className="w-full mt-4 bg-gradient-to-r from-green-500 to-emerald-500 text-black font-bold py-3 px-6 rounded-xl"
+            >
+              Connect Wallet to Stake
+            </button>
+          </div>
+        )}
+
+        {staked && (
+          <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-4 text-center">
+            <p className="text-green-400 font-semibold">🎉 You staked STRK! Your score has been boosted.</p>
           </div>
         )}
 
