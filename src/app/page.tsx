@@ -72,13 +72,6 @@ export default function Home() {
             {loading ? 'Loading...' : 'Analyze Wallet'}
           </button>
 
-          <a
-            href="/versus"
-            className="block w-full bg-zinc-800 border border-zinc-700 text-white font-semibold py-3 px-6 rounded-xl hover:bg-zinc-700 hover:border-zinc-600 transition-all text-center cursor-pointer"
-          >
-            Wallet vs Wallet ⚔️
-          </a>
-
           <div className="relative flex items-center gap-4">
             <div className="flex-1 h-px bg-zinc-700"></div>
             <span className="text-zinc-500 text-sm">or</span>
