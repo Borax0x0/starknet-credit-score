@@ -80,13 +80,17 @@ export default function CardPage({ params }: { params: Promise<{ address: string
 
         {metrics && (
           <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <WalletDNA address={address} metrics={metrics} size={280} />
+            <WalletDNA address={address} metrics={metrics} score={score} size={280} />
           </div>
         )}
 
         <div style={{ textAlign: 'center', padding: '16px 0' }}>
-          <p style={{ fontSize: '60px', fontWeight: 'bold', color: '#ffffff', lineHeight: 1 }}>{score}</p>
-          <p style={{ fontSize: '18px', color: '#a1a1aa', marginTop: '8px' }}>{tier}</p>
+          <p style={{ fontSize: '60px', fontWeight: 'bold', color: '#EC5728', lineHeight: 1 }}>{score}</p>
+          <p style={{ 
+            fontSize: '18px', 
+            color: score >= 750 ? '#22c55e' : score >= 650 ? '#3b82f6' : score >= 550 ? '#eab308' : '#ef4444', 
+            marginTop: '8px' 
+          }}>{tier}</p>
         </div>
 
         {personality && (
