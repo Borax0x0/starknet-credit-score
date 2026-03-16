@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getWalletMetrics, calculateScore, getScoreTier } from '@/lib/starknet';
+import { supabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +17,36 @@ export async function GET(request: NextRequest) {
         const metrics = await getWalletMetrics(address, network);
         const score = calculateScore(metrics);
         const tier = getScoreTier(score);
+
+        // Insert into Supabase
+        if (supabase) {
+            console.log('[DEBUG] Supabase client initialized, attempting insert for:', address);
+            
+            const strkBalance = metrics.strkBalance ? (BigInt(metrics.strkBalance) / BigInt(1e18)).toString() : '0';
+            const usdcBalance = metrics.usdcBalance ? (BigInt(metrics.usdcBalance) / BigInt(1e6)).toString() : '0';
+            
+            const { data, error: insertError } = await supabase
+                .from('wallet_scores')
+                .insert({
+                    address: address.toLowerCase(),
+                    score,
+                    tier,
+                    personality_type: null,
+                    wallet_age_days: metrics.walletAgeDays || 0,
+                    tx_count: metrics.txCount || 0,
+                    strk_balance: strkBalance,
+                    usdc_balance: usdcBalance,
+                    created_at: new Date().toISOString(),
+                });
+
+            if (insertError) {
+                console.error('[DEBUG] Supabase insert error:', JSON.stringify(insertError));
+            } else {
+                console.log('[DEBUG] Supabase insert success:', JSON.stringify(data));
+            }
+        } else {
+            console.log('[DEBUG] Supabase client is null - credentials may be missing');
+        }
 
         return NextResponse.json({
             metrics: {
