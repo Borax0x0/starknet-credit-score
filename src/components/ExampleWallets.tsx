@@ -2,7 +2,6 @@
 
 import { useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { motion, useSpring, useTransform } from 'framer-motion';
 
 const EXAMPLE_WALLETS = [
   {
@@ -141,17 +140,6 @@ function Constellation({ seed }: { seed: number }) {
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full rounded-t-xl" style={{ imageRendering: 'auto' }} />;
 }
 
-function AnimatedScore({ score }: { score: number }) {
-  const spring = useSpring(0, { stiffness: 60, damping: 15 });
-  const display = useTransform(spring, (latest) => Math.round(latest));
-
-  useEffect(() => {
-    spring.set(score);
-  }, [score, spring]);
-
-  return <motion.span>{display}</motion.span>;
-}
-
 function MiniCard({ wallet }: { wallet: typeof EXAMPLE_WALLETS[0] }) {
   const tierColor = {
     'Excellent': 'text-green-400',
@@ -165,17 +153,12 @@ function MiniCard({ wallet }: { wallet: typeof EXAMPLE_WALLETS[0] }) {
 
   return (
     <Link href={`/score/${wallet.address}`} className="group">
-      <motion.div 
-        className="w-[180px] h-[240px] rounded-xl bg-[#12121a] border border-primary/20 overflow-hidden flex flex-col hover:border-primary/50 hover:scale-105 transition-all cursor-pointer relative"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+      <div className="w-[180px] h-[240px] rounded-xl bg-[#12121a] border border-primary/20 overflow-hidden flex flex-col hover:border-primary/50 hover:scale-105 transition-all cursor-pointer relative">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
         <Constellation seed={seed} />
         <div className="relative z-10 flex-1 flex flex-col justify-between p-3">
           <div className="text-center mt-4">
-            <p className="text-2xl font-bold text-white"><AnimatedScore score={wallet.score} /></p>
+            <p className="text-2xl font-bold text-white">{wallet.score}</p>
             <p className={`text-xs font-medium ${tierColor}`}>{wallet.tier}</p>
             <p className="text-[10px] text-primary mt-0.5">{wallet.personality}</p>
           </div>
@@ -183,7 +166,7 @@ function MiniCard({ wallet }: { wallet: typeof EXAMPLE_WALLETS[0] }) {
             {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
           </p>
         </div>
-      </motion.div>
+      </div>
     </Link>
   );
 }

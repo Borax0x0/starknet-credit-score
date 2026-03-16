@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { TrendingUp, Wallet, Fingerprint } from 'lucide-react';
 import { ExampleWallets } from '@/components/ExampleWallets';
-import { motion } from 'framer-motion';
 
 export default function Home() {
   const [address, setAddress] = useState('');
@@ -111,12 +110,8 @@ export default function Home() {
                 </p>
               </div>
               <div className="relative max-w-xl group">
-                <motion.div 
-                  className="absolute -inset-1 bg-gradient-to-r from-primary to-accent rounded-xl blur opacity-25 group-focus-within:opacity-60"
-                  animate={{ opacity: [0.25, 0.6, 0.25] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                />
-                <div className="relative flex items-center bg-[#12121a] rounded-xl border border-primary/30 p-2 shadow-2xl group-focus-within:border-primary/60">
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary to-accent rounded-xl blur opacity-25 group-focus-within:opacity-50 transition duration-1000"></div>
+                <div className="relative flex items-center bg-[#12121a] rounded-xl border border-primary/30 p-2 shadow-2xl">
                   <Wallet className="ml-4 w-5 h-5 text-slate-400" />
                   <input
                     type="text"
@@ -128,23 +123,14 @@ export default function Home() {
                     className="flex-1 bg-transparent border-none focus:ring-0 text-white px-4 py-3 placeholder:text-slate-500 text-sm md:text-base outline-none"
                     style={{ background: 'transparent', WebkitBoxShadow: 'none', boxShadow: 'none' }}
                   />
-                  <motion.button 
+                  <button 
                     onClick={handleAnalyze}
                     disabled={loading}
-                    className="bg-[#EC5728] hover:bg-[#EC5728]/90 text-white px-6 md:px-8 py-3 rounded-lg font-bold text-sm md:text-base transition-all flex items-center gap-2 shadow-lg shadow-[#EC5728]/20 relative overflow-hidden"
-                    whileTap={{ scale: 0.95 }}
+                    className="bg-[#EC5728] hover:bg-[#EC5728]/90 text-white px-6 md:px-8 py-3 rounded-lg font-bold text-sm md:text-base transition-all flex items-center gap-2 shadow-lg shadow-[#EC5728]/20"
                   >
-                    <motion.span
-                      className="absolute inset-0 bg-white/20"
-                      initial={{ x: '-100%' }}
-                      whileTap={{ x: '100%' }}
-                      transition={{ duration: 0.5 }}
-                    />
-                    <span className="relative z-10">
-                      {loading ? 'Analyzing...' : 'Analyze'}
-                    </span>
-                    <TrendingUp className="w-4 h-4 relative z-10" />
-                  </motion.button>
+                    {loading ? 'Analyzing...' : 'Analyze'}
+                    <TrendingUp className="w-4 h-4" />
+                  </button>
                 </div>
                 {error && (
                   <p className="text-red-400 text-sm mt-2">{error}</p>

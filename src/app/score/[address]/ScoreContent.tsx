@@ -6,7 +6,6 @@ import { WalletDNA } from '@/components/WalletDNA';
 import { StakePanel } from '@/components/StakePanel';
 import Link from 'next/link';
 import { TrendingUp, Wallet, Fingerprint, Zap, Calendar, DollarSign, BadgeCheck, Clock, BarChart2 } from 'lucide-react';
-import { motion, useSpring, useTransform, AnimatePresence } from 'framer-motion';
 
 interface Props {
   params: Promise<{ address: string }>;
@@ -58,12 +57,6 @@ export default function ScoreContent({ params, searchParams }: Props) {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0a0f] text-white flex items-center justify-center">
-        <motion.div 
-          className="fixed top-0 left-0 h-1 bg-[#EC5728] z-50"
-          initial={{ width: 0 }}
-          animate={{ width: '100%' }}
-          transition={{ duration: 3, ease: 'easeInOut' }}
-        />
         <style>{`
           @keyframes loadingFade {
             from { opacity: 0; transform: translateY(6px); }
@@ -162,48 +155,17 @@ export default function ScoreContent({ params, searchParams }: Props) {
 
         <div className="max-w-4xl mx-auto -mt-32 relative z-10 px-4 pb-12">
           <div className="flex flex-col items-center">
-            <motion.div 
-              className={`relative size-64 md:size-80 flex items-center justify-center rounded-full bg-[#0a0a0f] border-4 border-primary/40 ${getScoreGlow()}`}
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5 }}
-            >
+            <div className={`relative size-64 md:size-80 flex items-center justify-center rounded-full bg-[#0a0a0f] border-4 border-primary/40 ${getScoreGlow()}`}>
               <div className="absolute inset-2 border-2 border-dashed border-primary/20 rounded-full"></div>
               <div className="text-center">
-                <motion.h1 
-                  className="text-7xl md:text-8xl font-bold tracking-tighter"
-                  style={{ color: '#EC5728' }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 1.5 }}
-                >
-                  <CountUpScore score={score} />
-                </motion.h1>
-                <motion.p 
-                  className="font-bold uppercase tracking-[0.2em] text-sm mt-2"
-                  style={{ color: score >= 750 ? '#EC5728' : '#7c3aed' }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1.5, duration: 0.5 }}
-                >
-                  {getScoreTier()}
-                </motion.p>
+                <h1 className="text-7xl md:text-8xl font-bold tracking-tighter" style={{ color: '#EC5728' }}>{score}</h1>
+                <p className="font-bold uppercase tracking-[0.2em] text-sm mt-2" style={{ color: score >= 750 ? '#EC5728' : '#7c3aed' }}>{getScoreTier()}</p>
               </div>
               <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
                 <circle className="text-primary/10" cx="50" cy="50" fill="transparent" r="48" stroke="currentColor" strokeWidth="4"></circle>
-                <motion.circle 
-                  className="text-primary"
-                  cx="50" cy="50" 
-                  fill="transparent" r="48" 
-                  stroke="currentColor" 
-                  strokeWidth="4"
-                  strokeDasharray="301"
-                  initial={{ strokeDashoffset: 301 }}
-                  animate={{ strokeDashoffset: 301 - Math.round(301 * (score / 850)) }}
-                  transition={{ duration: 1.5, ease: 'easeOut' }}
-                />
+                <circle className="text-primary" cx="50" cy="50" fill="transparent" r="48" stroke="currentColor" strokeDasharray="301" strokeDashoffset={301 - Math.round(301 * (score / 850))} strokeWidth="4"></circle>
               </svg>
-            </motion.div>
+            </div>
 
             <div className="mt-10 text-center">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
@@ -215,12 +177,12 @@ export default function ScoreContent({ params, searchParams }: Props) {
 
           {metrics && (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-16 mb-12">
-              <MetricCard icon={<Calendar className="w-5 h-5" />} label="Wallet Age" value={`${metrics.walletAgeDays || 0} Days`} delay={1.6} />
-              <MetricCard icon={<Clock className="w-5 h-5" />} label="Transactions" value={metrics.txCount?.toLocaleString() || '0'} delay={1.7} />
-              <MetricCard icon={<Wallet className="w-5 h-5" />} label="Unique Tokens" value={(metrics.uniqueTokens || 0).toString()} delay={1.8} />
-              <MetricCard icon={<Zap className="w-5 h-5" />} label="Days Inactive" value={metrics.daysSinceLastTx !== null ? metrics.daysSinceLastTx.toString() : 'Unknown'} delay={1.9} />
-              <MetricCard icon={<DollarSign className="w-5 h-5" />} label="STRK Balance" value={`${(parseFloat(metrics.strkBalance || '0') / 1e18).toFixed(2)}`} delay={2.0} />
-              <MetricCard icon={<DollarSign className="w-5 h-5" />} label="USDC Balance" value={`${(parseFloat(metrics.usdcBalance || '0') / 1e6).toFixed(2)}`} delay={2.1} />
+              <MetricCard icon={<Calendar className="w-5 h-5" />} label="Wallet Age" value={`${metrics.walletAgeDays || 0} Days`} />
+              <MetricCard icon={<Clock className="w-5 h-5" />} label="Transactions" value={metrics.txCount?.toLocaleString() || '0'} />
+              <MetricCard icon={<Wallet className="w-5 h-5" />} label="Unique Tokens" value={(metrics.uniqueTokens || 0).toString()} />
+              <MetricCard icon={<Zap className="w-5 h-5" />} label="Days Inactive" value={metrics.daysSinceLastTx !== null ? metrics.daysSinceLastTx.toString() : 'Unknown'} />
+              <MetricCard icon={<DollarSign className="w-5 h-5" />} label="STRK Balance" value={`${(parseFloat(metrics.strkBalance || '0') / 1e18).toFixed(2)}`} />
+              <MetricCard icon={<DollarSign className="w-5 h-5" />} label="USDC Balance" value={`${(parseFloat(metrics.usdcBalance || '0') / 1e6).toFixed(2)}`} />
             </div>
           )}
 
@@ -282,23 +244,12 @@ export default function ScoreContent({ params, searchParams }: Props) {
           )}
 
           <div className="space-y-4">
-            <motion.div
-              className="relative overflow-hidden rounded-xl"
-              whileHover="hover"
+            <Link
+              href={`/card/${address}`}
+              className="block w-full bg-primary hover:bg-primary/90 text-white font-bold py-5 px-6 rounded-xl text-center text-lg transition-all shadow-xl shadow-primary/20"
             >
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                initial={{ x: '-100%' }}
-                whileHover={{ x: '100%' }}
-                transition={{ duration: 0.6 }}
-              />
-              <Link
-                href={`/card/${address}`}
-                className="block w-full bg-primary hover:bg-primary/90 text-white font-bold py-5 px-6 rounded-xl text-center text-lg transition-all shadow-xl shadow-primary/20"
-              >
-                Share Card
-              </Link>
-            </motion.div>
+              Share Card
+            </Link>
             <a
               href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
                 `My Starknet wallet is a ${personality?.type || 'mystery'} with a credit score of ${score} 👀 What's yours? https://starknet-creditscore.vercel.app #Starknet #StarkzapChallenge`
@@ -353,25 +304,9 @@ export default function ScoreContent({ params, searchParams }: Props) {
   );
 }
 
-function CountUpScore({ score }: { score: number }) {
-  const spring = useSpring(0, { stiffness: 50, damping: 20 });
-  const display = useTransform(spring, (latest) => Math.round(latest));
-
-  useEffect(() => {
-    spring.set(score);
-  }, [score, spring]);
-
-  return <motion.span>{display}</motion.span>;
-}
-
-function MetricCard({ icon, label, value, delay }: { icon: React.ReactNode; label: string; value: string; delay: number }) {
+function MetricCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <motion.div 
-      className="bg-primary/5 border border-primary/10 rounded-xl p-6 flex flex-col gap-3 hover:border-primary/40 transition-colors hover:scale-[1.02] cursor-pointer"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.4 }}
-    >
+    <div className="bg-primary/5 border border-primary/10 rounded-xl p-6 flex flex-col gap-3 hover:border-primary/40 transition-colors">
       <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
         {icon}
       </div>
@@ -379,6 +314,6 @@ function MetricCard({ icon, label, value, delay }: { icon: React.ReactNode; labe
         <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">{label}</p>
         <p className="text-xl font-bold text-slate-100">{value}</p>
       </div>
-    </motion.div>
+    </div>
   );
 }

@@ -145,15 +145,12 @@ export function WalletDNA({ address, metrics, score, size = 400 }: WalletDNAProp
         const animate = () => {
             ctx.clearRect(0, 0, width, height);
             time += 0.02;
-            
-            const fadeIn = Math.min(1, time * 1);
-            const fadeInOpacity = 0.2 + fadeIn * 0.8;
 
             connections.forEach(([i, j]) => {
                 const fadePhase = Math.sin(time * 0.8 + i * 0.1 + j * 0.1) * 0.5 + 0.5;
-                const opacity = (0.1 + fadePhase * 0.3) * baseOpacity * fadeInOpacity;
+                const opacity = 0.1 + fadePhase * 0.3;
                 
-                ctx.strokeStyle = `rgba(${tierColor.r}, ${tierColor.g}, ${tierColor.b}, ${opacity})`;
+                ctx.strokeStyle = `rgba(${tierColor.r}, ${tierColor.g}, ${tierColor.b}, ${opacity * baseOpacity})`;
                 ctx.lineWidth = 1;
                 ctx.beginPath();
                 ctx.moveTo(nodes[i].x, nodes[i].y);
@@ -170,7 +167,7 @@ export function WalletDNA({ address, metrics, score, size = 400 }: WalletDNAProp
 
                 const pulse = Math.sin(time * node.pulseSpeed + node.phase) * 0.5 + 0.5;
                 const dotSize = baseDotSize + pulse * 2;
-                const opacity = (0.6 + pulse * 0.4) * baseOpacity * fadeInOpacity;
+                const opacity = (0.6 + pulse * 0.4) * baseOpacity;
 
                 ctx.fillStyle = `rgba(${tierColor.r}, ${tierColor.g}, ${tierColor.b}, ${opacity})`;
                 ctx.beginPath();
