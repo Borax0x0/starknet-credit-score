@@ -19,6 +19,10 @@ export async function GET(request: NextRequest) {
         const tier = getScoreTier(score);
 
         // Insert into Supabase
+        console.log('[DEBUG] About to check supabase client. Is null?', supabase === null);
+        console.log('[DEBUG] ENV URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'set' : 'NOT SET');
+        console.log('[DEBUG] ENV KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'set' : 'NOT SET');
+        
         if (supabase) {
             console.log('[DEBUG] Supabase client initialized, attempting insert for:', address);
             
