@@ -5,7 +5,8 @@ import { useWalletAnalysis } from '@/lib/useWalletAnalysis';
 import { WalletDNA } from '@/components/WalletDNA';
 import { StakePanel } from '@/components/StakePanel';
 import Link from 'next/link';
-import { TrendingUp, Wallet, Fingerprint, Zap, Calendar, DollarSign, BadgeCheck, Clock, BarChart2 } from 'lucide-react';
+import { TrendingUp, Wallet, Fingerprint, Zap, Calendar, DollarSign, BadgeCheck, Clock, BarChart2, Trophy } from 'lucide-react';
+import { motion, useSpring, useTransform } from 'framer-motion';
 
 interface Props {
   params: Promise<{ address: string }>;
@@ -15,6 +16,13 @@ interface Props {
 export default function ScoreContent({ params, searchParams }: Props) {
   const [address, setAddress] = useState('');
   const [network, setNetwork] = useState<'mainnet' | 'sepolia'>('mainnet');
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyAddress = async () => {
+    await navigator.clipboard.writeText(address);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   useEffect(() => {
     params.then((p) => setAddress(p.address));
@@ -28,7 +36,7 @@ export default function ScoreContent({ params, searchParams }: Props) {
     }
   }, [searchParams]);
 
-  const { metrics, score, personality, loading, error } = useWalletAnalysis(address, network);
+  const { metrics, score, personality, loading, error, refetch } = useWalletAnalysis(address, network);
   const [staked, setStaked] = useState(false);
   const [showStakePanel, setShowStakePanel] = useState(false);
 
@@ -57,6 +65,12 @@ export default function ScoreContent({ params, searchParams }: Props) {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0a0f] text-white flex items-center justify-center">
+        <motion.div 
+          className="fixed top-0 left-0 h-1 bg-[#EC5728] z-50"
+          initial={{ width: 0 }}
+          animate={{ width: '100%' }}
+          transition={{ duration: 3, ease: 'easeInOut' }}
+        />
         <style>{`
           @keyframes loadingFade {
             from { opacity: 0; transform: translateY(6px); }
@@ -94,7 +108,15 @@ export default function ScoreContent({ params, searchParams }: Props) {
       <div className="min-h-screen bg-[#0a0a0f] text-white flex items-center justify-center">
         <div className="text-center space-y-4">
           <p className="text-red-400 text-xl">{error}</p>
-          <Link href="/" className="text-primary hover:underline text-lg">Go back</Link>
+          <div className="flex flex-col gap-2">
+            <button 
+              onClick={refetch}
+              className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg font-medium transition-all"
+            >
+              Try Again
+            </button>
+            <Link href="/" className="text-primary hover:underline text-lg">Go back</Link>
+          </div>
         </div>
       </div>
     );
@@ -121,13 +143,15 @@ export default function ScoreContent({ params, searchParams }: Props) {
     <div className="min-h-screen bg-[#0a0a0f] text-slate-100 flex flex-col">
       <header className="flex items-center justify-between border-b border-primary/20 px-6 md:px-20 py-4 backdrop-blur-md sticky top-0 z-50 bg-[#0a0a0f]/80">
         <div className="flex items-center gap-3">
-          <div className="size-8 text-primary">
-            <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-              <path clipRule="evenodd" d="M24 18.4228L42 11.475V34.3663C42 34.7796 41.7457 35.1504 41.3601 35.2992L24 42V18.4228Z" fill="currentColor" fillRule="evenodd"></path>
-              <path clipRule="evenodd" d="M24 8.18819L33.4123 11.574L24 15.2071L14.5877 11.574L24 8.18819ZM9 15.8487L21 20.4805V37.6263L9 32.9945V15.8487ZM27 37.6263V20.4805L39 15.8487V32.9945L27 37.6263ZM25.354 2.29885C24.4788 1.98402 23.5212 1.98402 22.646 2.29885L4.98454 8.65208C3.7939 9.08038 3 10.2097 3 11.475V34.3663C3 36.0196 4.01719 37.5026 5.55962 38.098L22.9197 44.7987C23.6149 45.0671 24.3851 45.0671 25.0803 44.7987L42.4404 38.098C43.9828 37.5026 45 36.0196 45 34.3663V11.475C45 10.2097 44.2061 9.08038 43.0155 8.65208L25.354 2.29885Z" fill="currentColor" fillRule="evenodd"></path>
-            </svg>
-          </div>
-          <h2 className="text-white text-xl font-bold tracking-tight">Starknet <span className="text-primary">Credit</span></h2>
+          <Link href="/" className="flex items-center gap-3">
+            <div className="size-8 text-primary">
+              <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                <path clipRule="evenodd" d="M24 18.4228L42 11.475V34.3663C42 34.7796 41.7457 35.1504 41.3601 35.2992L24 42V18.4228Z" fill="currentColor" fillRule="evenodd"></path>
+                <path clipRule="evenodd" d="M24 8.18819L33.4123 11.574L24 15.2071L14.5877 11.574L24 8.18819ZM9 15.8487L21 20.4805V37.6263L9 32.9945V15.8487ZM27 37.6263V20.4805L39 15.8487V32.9945L27 37.6263ZM25.354 2.29885C24.4788 1.98402 23.5212 1.98402 22.646 2.29885L4.98454 8.65208C3.7939 9.08038 3 10.2097 3 11.475V34.3663C3 36.0196 4.01719 37.5026 5.55962 38.098L22.9197 44.7987C23.6149 45.0671 24.3851 45.0671 25.0803 44.7987L42.4404 38.098C43.9828 37.5026 45 36.0196 45 34.3663V11.475C45 10.2097 44.2061 9.08038 43.0155 8.65208L25.354 2.29885Z" fill="currentColor" fillRule="evenodd"></path>
+              </svg>
+            </div>
+            <h2 className="text-white text-xl font-bold tracking-tight">Starknet <span className="text-primary">Credit</span></h2>
+          </Link>
         </div>
         <Link
           href={`/card/${address}`}
@@ -149,23 +173,60 @@ export default function ScoreContent({ params, searchParams }: Props) {
             <div className="text-center mb-4">
               <span className="px-3 py-1 rounded-full bg-primary/20 text-primary text-xs font-bold uppercase tracking-widest border border-primary/30">On-Chain Identity</span>
             </div>
-            <p className="text-slate-400 text-sm font-mono">{address.slice(0, 10)}...{address.slice(-8)}</p>
+            <button 
+              onClick={handleCopyAddress}
+              className="text-slate-400 text-sm font-mono hover:text-primary transition-colors flex items-center gap-2"
+            >
+              {address.slice(0, 10)}...{address.slice(-8)}
+              {copied && <span className="text-green-400 text-xs">Copied!</span>}
+            </button>
           </div>
         </div>
 
         <div className="max-w-4xl mx-auto -mt-32 relative z-10 px-4 pb-12">
           <div className="flex flex-col items-center">
-            <div className={`relative size-64 md:size-80 flex items-center justify-center rounded-full bg-[#0a0a0f] border-4 border-primary/40 ${getScoreGlow()}`}>
+            <motion.div 
+              className={`relative size-64 md:size-80 flex items-center justify-center rounded-full bg-[#0a0a0f] border-4 border-primary/40 ${getScoreGlow()}`}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
               <div className="absolute inset-2 border-2 border-dashed border-primary/20 rounded-full"></div>
               <div className="text-center">
-                <h1 className="text-7xl md:text-8xl font-bold tracking-tighter" style={{ color: '#EC5728' }}>{score}</h1>
-                <p className="font-bold uppercase tracking-[0.2em] text-sm mt-2" style={{ color: score >= 750 ? '#EC5728' : '#7c3aed' }}>{getScoreTier()}</p>
+                <motion.h1 
+                  className="text-7xl md:text-8xl font-bold tracking-tighter"
+                  style={{ color: '#EC5728' }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 1.5 }}
+                >
+                  <CountUpScore score={score} />
+                </motion.h1>
+                <motion.p 
+                  className="font-bold uppercase tracking-[0.2em] text-sm mt-2"
+                  style={{ color: score >= 750 ? '#EC5728' : '#7c3aed' }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 1.5, duration: 0.5 }}
+                >
+                  {getScoreTier()}
+                </motion.p>
               </div>
               <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
                 <circle className="text-primary/10" cx="50" cy="50" fill="transparent" r="48" stroke="currentColor" strokeWidth="4"></circle>
-                <circle className="text-primary" cx="50" cy="50" fill="transparent" r="48" stroke="currentColor" strokeDasharray="301" strokeDashoffset={301 - Math.round(301 * (score / 850))} strokeWidth="4"></circle>
+                <motion.circle 
+                  className="text-primary"
+                  cx="50" cy="50" 
+                  fill="transparent" r="48" 
+                  stroke="currentColor" 
+                  strokeWidth="4"
+                  strokeDasharray="301"
+                  initial={{ strokeDashoffset: 301 }}
+                  animate={{ strokeDashoffset: 301 - Math.round(301 * (score / 850)) }}
+                  transition={{ duration: 1.5, ease: 'easeOut' }}
+                />
               </svg>
-            </div>
+            </motion.div>
 
             <div className="mt-10 text-center">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
@@ -177,12 +238,12 @@ export default function ScoreContent({ params, searchParams }: Props) {
 
           {metrics && (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-16 mb-12">
-              <MetricCard icon={<Calendar className="w-5 h-5" />} label="Wallet Age" value={`${metrics.walletAgeDays || 0} Days`} />
-              <MetricCard icon={<Clock className="w-5 h-5" />} label="Transactions" value={metrics.txCount?.toLocaleString() || '0'} />
-              <MetricCard icon={<Wallet className="w-5 h-5" />} label="Unique Tokens" value={(metrics.uniqueTokens || 0).toString()} />
-              <MetricCard icon={<Zap className="w-5 h-5" />} label="Days Inactive" value={metrics.daysSinceLastTx !== null ? metrics.daysSinceLastTx.toString() : 'Unknown'} />
-              <MetricCard icon={<DollarSign className="w-5 h-5" />} label="STRK Balance" value={`${(parseFloat(metrics.strkBalance || '0') / 1e18).toFixed(2)}`} />
-              <MetricCard icon={<DollarSign className="w-5 h-5" />} label="USDC Balance" value={`${(parseFloat(metrics.usdcBalance || '0') / 1e6).toFixed(2)}`} />
+              <MetricCard icon={<Calendar className="w-5 h-5" />} label="Wallet Age" value={`${metrics.walletAgeDays || 0} Days`} delay={1.6} />
+              <MetricCard icon={<Clock className="w-5 h-5" />} label="Transactions" value={metrics.txCount?.toLocaleString() || '0'} delay={1.7} />
+              <MetricCard icon={<Wallet className="w-5 h-5" />} label="Unique Tokens" value={(metrics.uniqueTokens || 0).toString()} delay={1.8} />
+              <MetricCard icon={<Zap className="w-5 h-5" />} label="Days Inactive" value={metrics.daysSinceLastTx !== null ? metrics.daysSinceLastTx.toString() : 'Unknown'} delay={1.9} />
+              <MetricCard icon={<DollarSign className="w-5 h-5" />} label="STRK Balance" value={`${(parseFloat(metrics.strkBalance || '0') / 1e18).toFixed(2)}`} delay={2.0} />
+              <MetricCard icon={<DollarSign className="w-5 h-5" />} label="USDC Balance" value={`${(parseFloat(metrics.usdcBalance || '0') / 1e6).toFixed(2)}`} delay={2.1} />
             </div>
           )}
 
@@ -244,15 +305,26 @@ export default function ScoreContent({ params, searchParams }: Props) {
           )}
 
           <div className="space-y-4">
-            <Link
-              href={`/card/${address}`}
-              className="block w-full bg-primary hover:bg-primary/90 text-white font-bold py-5 px-6 rounded-xl text-center text-lg transition-all shadow-xl shadow-primary/20"
+            <motion.div
+              className="relative overflow-hidden rounded-xl"
+              whileHover="hover"
             >
-              Share Card
-            </Link>
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                initial={{ x: '-100%' }}
+                whileHover={{ x: '100%' }}
+                transition={{ duration: 0.6 }}
+              />
+              <Link
+                href={`/card/${address}`}
+                className="block w-full bg-primary hover:bg-primary/90 text-white font-bold py-5 px-6 rounded-xl text-center text-lg transition-all shadow-xl shadow-primary/20"
+              >
+                Share Card
+              </Link>
+            </motion.div>
             <a
               href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                `My Starknet wallet is a ${personality?.type || 'mystery'} with a credit score of ${score} 👀 What's yours? https://starknet-creditscore.vercel.app #Starknet #StarkzapChallenge`
+                `My Starknet wallet is a ${personality?.type || 'mystery'} with a credit score of ${score} 👀 Check yours: https://starknet-creditscore.vercel.app/score/${address} #Starknet #StarkzapChallenge`
               )}`}
               target="_blank"
               rel="noopener noreferrer"
@@ -260,6 +332,13 @@ export default function ScoreContent({ params, searchParams }: Props) {
             >
               Share on 𝕏
             </a>
+            <Link
+              href="/leaderboard"
+              className="block w-full bg-[#12121a] hover:bg-[#1a1a24] text-white font-bold py-5 px-6 rounded-xl text-center text-lg transition-all border border-primary/20 hover:border-primary/40 flex items-center justify-center gap-2"
+            >
+              <Trophy className="w-5 h-5 text-yellow-400" />
+              View Leaderboard
+            </Link>
           </div>
         </div>
       </main>
@@ -304,9 +383,25 @@ export default function ScoreContent({ params, searchParams }: Props) {
   );
 }
 
-function MetricCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function CountUpScore({ score }: { score: number }) {
+  const spring = useSpring(0, { stiffness: 50, damping: 20 });
+  const display = useTransform(spring, (latest) => Math.round(latest));
+
+  useEffect(() => {
+    spring.set(score);
+  }, [score, spring]);
+
+  return <motion.span>{display}</motion.span>;
+}
+
+function MetricCard({ icon, label, value, delay }: { icon: React.ReactNode; label: string; value: string; delay: number }) {
   return (
-    <div className="bg-primary/5 border border-primary/10 rounded-xl p-6 flex flex-col gap-3 hover:border-primary/40 transition-colors">
+    <motion.div 
+      className="bg-primary/5 border border-primary/10 rounded-xl p-6 flex flex-col gap-3 hover:border-primary/40 transition-colors hover:scale-[1.02] cursor-pointer"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.4 }}
+    >
       <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
         {icon}
       </div>
@@ -314,6 +409,6 @@ function MetricCard({ icon, label, value }: { icon: React.ReactNode; label: stri
         <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">{label}</p>
         <p className="text-xl font-bold text-slate-100">{value}</p>
       </div>
-    </div>
+    </motion.div>
   );
 }

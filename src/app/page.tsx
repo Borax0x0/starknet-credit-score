@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import { TrendingUp, Wallet, Fingerprint } from 'lucide-react';
 import { ExampleWallets } from '@/components/ExampleWallets';
+import { motion } from 'framer-motion';
 
 export default function Home() {
   const [address, setAddress] = useState('');
   const [loading, setLoading] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState('');
 
   const handleAnalyze = () => {
@@ -24,16 +26,26 @@ export default function Home() {
   };
 
   const handleConnectWallet = async () => {
+    console.log('[DEBUG] handleConnectWallet called');
+    console.log('[DEBUG] Current address state:', address);
+    console.log('[DEBUG] Current URL:', window.location.href);
     setError('');
+    setConnecting(true);
     try {
+      console.log('[DEBUG] Importing StarkZap...');
       const { StarkZap } = await import('starkzap');
+      console.log('[DEBUG] StarkZap imported, initializing SDK...');
       const sdk = new StarkZap({ network: 'mainnet' });
+      console.log('[DEBUG] SDK initialized, calling connectCartridge...');
       const wallet = await sdk.connectCartridge();
+      console.log('[DEBUG] connectCartridge returned:', wallet);
       const walletAddress = wallet.address.toString();
+      console.log('[DEBUG] Wallet address:', walletAddress);
       window.location.href = `/score/${walletAddress}`;
     } catch (err) {
-      console.error('Wallet connection error:', err);
-      setError('Failed to connect wallet. Please try again.');
+      console.error('[DEBUG] Wallet connection error:', err);
+      setError('Failed to connect wallet. Please try again or enter address manually.');
+      setConnecting(false);
     }
   };
 
@@ -61,7 +73,7 @@ export default function Home() {
   return (
     <div className="min-h-screen text-slate-100 flex flex-col">
       <header className="flex items-center justify-between border-b border-primary/20 px-6 md:px-20 py-4 backdrop-blur-md sticky top-0 z-50 bg-[#0a0a0f]/50">
-        <div className="flex items-center gap-3">
+        <a href="/" className="flex items-center gap-3">
           <div className="size-8 text-primary">
             <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
               <path clipRule="evenodd" d="M24 18.4228L42 11.475V34.3663C42 34.7796 41.7457 35.1504 41.3601 35.2992L24 42V18.4228Z" fill="currentColor" fillRule="evenodd"></path>
@@ -69,31 +81,50 @@ export default function Home() {
             </svg>
           </div>
           <h2 className="text-white text-xl font-bold tracking-tight">Starknet <span className="text-primary">Score</span></h2>
-        </div>
-        <div className="hidden md:flex flex-1 justify-end gap-10 items-center">
-          <nav className="flex items-center gap-8">
-            <a className="text-slate-300 hover:text-primary transition-colors text-sm font-medium" href="#">Explorer</a>
-            <a className="text-slate-300 hover:text-primary transition-colors text-sm font-medium" href="#">Features</a>
-            <a className="text-slate-300 hover:text-primary transition-colors text-sm font-medium" href="#">API</a>
-            <a className="text-slate-300 hover:text-primary transition-colors text-sm font-medium" href="#">About</a>
-          </nav>
+        </a>
+        <div className="flex items-center gap-4">
           <button 
-            onClick={handleConnectWallet}
-            className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg text-sm font-bold transition-all border border-[#EC5728]/30"
+            type="button"
+            onClick={(e) => {
+              console.log('[DEBUG] Button clicked');
+              handleConnectWallet();
+            }}
+            disabled={connecting}
+            className="md:hidden bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all border border-[#EC5728]/30 disabled:opacity-50"
           >
-            Connect Wallet
+            {connecting ? '...' : 'Connect'}
           </button>
+          <div className="hidden md:flex flex-1 justify-end gap-10 items-center">
+            <nav className="flex items-center gap-6 md:gap-8">
+              <a className="text-slate-300 hover:text-primary transition-colors text-sm font-medium" href="/leaderboard">Leaderboard</a>
+              <a className="hidden md:block text-slate-300 hover:text-primary transition-colors text-sm font-medium" href="#">Explorer</a>
+              <a className="hidden md:block text-slate-300 hover:text-primary transition-colors text-sm font-medium" href="#">Features</a>
+              <a className="hidden md:block text-slate-300 hover:text-primary transition-colors text-sm font-medium" href="#">API</a>
+              <a className="hidden md:block text-slate-300 hover:text-primary transition-colors text-sm font-medium" href="#">About</a>
+            </nav>
+            <button 
+              type="button"
+              onClick={(e) => {
+                console.log('[DEBUG] Button clicked');
+                handleConnectWallet();
+              }}
+              disabled={connecting}
+              className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg text-sm font-bold transition-all border border-[#EC5728]/30 disabled:opacity-50"
+            >
+              {connecting ? 'Connecting...' : 'Connect Wallet'}
+            </button>
+          </div>
         </div>
       </header>
 
       <main className="flex-1">
-        <section className="relative px-6 md:px-20 pb-8 lg:pb-10 overflow-hidden">
+        <section className="relative px-3 md:px-20 pb-8 lg:pb-10 overflow-hidden">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10">
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[120px]"></div>
-            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-[120px]"></div>
+            <div className="absolute top-0 left-1/4 w-48 h-48 md:w-96 md:h-96 bg-primary/20 rounded-full blur-[80px] md:blur-[120px]"></div>
+            <div className="absolute bottom-0 right-1/4 w-48 h-48 md:w-96 md:h-96 bg-accent/10 rounded-full blur-[80px] md:blur-[120px]"></div>
           </div>
-          <div className="max-w-[1200px] mx-auto grid lg:grid-cols-2 gap-12 items-center">
-            <div className="flex flex-col gap-8 text-left">
+          <div className="max-w-[1200px] mx-auto grid lg:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div className="flex flex-col gap-6 md:gap-8 text-left">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EC5728]/10 border border-[#EC5728]/20 text-[#EC5728] text-xs font-bold uppercase tracking-widest w-fit">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#EC5728] opacity-75"></span>
@@ -102,17 +133,21 @@ export default function Home() {
                 Starknet Mainnet Live
               </div>
               <div className="flex flex-col gap-4">
-                <h1 className="text-5xl md:text-7xl font-black leading-[1.1] tracking-tight" style={{ color: '#ffffff' }}>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl xl:text-7xl font-black leading-[1.1] tracking-tight break-words" style={{ color: '#ffffff' }}>
                   Your wallet has a <span className="text-primary">reputation</span>
                 </h1>
-                <p className="text-slate-400 text-lg md:text-xl leading-relaxed max-w-xl">
-                  Unlock your on-chain potential. Analyze your Starknet credit health, DeFi reputation, and social identity with our advanced scoring engine.
+                <p className="text-sm md:text-lg text-slate-400 leading-relaxed max-w-xl">
+                  Unlock your on-chain potential. Analyze your Starknet credit health, DeFi reputation, and social identity.
                 </p>
               </div>
-              <div className="relative max-w-xl group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-primary to-accent rounded-xl blur opacity-25 group-focus-within:opacity-50 transition duration-1000"></div>
-                <div className="relative flex items-center bg-[#12121a] rounded-xl border border-primary/30 p-2 shadow-2xl">
-                  <Wallet className="ml-4 w-5 h-5 text-slate-400" />
+              <div className="relative max-w-full group">
+                <motion.div 
+                  className="absolute -inset-1 bg-gradient-to-r from-primary to-accent rounded-xl blur opacity-25 group-focus-within:opacity-60"
+                  animate={{ opacity: [0.25, 0.6, 0.25] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+                <div className="relative flex flex-col sm:flex-row items-stretch sm:items-center bg-[#12121a] rounded-xl border border-primary/30 p-2 shadow-2xl gap-2 sm:gap-0 group-focus-within:border-primary/60">
+                  <Wallet className="ml-3 sm:ml-4 w-5 h-5 text-slate-400 flex-shrink-0" />
                   <input
                     type="text"
                     placeholder="Enter Starknet address (0x...)"
@@ -120,47 +155,52 @@ export default function Home() {
                     onChange={(e) => setAddress(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleAnalyze()}
                     autoComplete="off"
-                    className="flex-1 bg-transparent border-none focus:ring-0 text-white px-4 py-3 placeholder:text-slate-500 text-sm md:text-base outline-none"
+                    className="flex-1 bg-transparent border-none focus:ring-0 text-white px-3 py-2 sm:px-4 sm:py-3 placeholder:text-slate-500 text-sm outline-none min-w-0"
                     style={{ background: 'transparent', WebkitBoxShadow: 'none', boxShadow: 'none' }}
                   />
-                  <button 
+                  <motion.button 
                     onClick={handleAnalyze}
                     disabled={loading}
-                    className="bg-[#EC5728] hover:bg-[#EC5728]/90 text-white px-6 md:px-8 py-3 rounded-lg font-bold text-sm md:text-base transition-all flex items-center gap-2 shadow-lg shadow-[#EC5728]/20"
+                    className="bg-[#EC5728] hover:bg-[#EC5728]/90 text-white px-4 sm:px-6 md:px-8 py-2 sm:py-3 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#EC5728]/20 whitespace-nowrap"
+                    whileTap={{ scale: 0.95 }}
                   >
-                    {loading ? 'Analyzing...' : 'Analyze'}
-                    <TrendingUp className="w-4 h-4" />
-                  </button>
+                    <span className="relative z-10">
+                      {loading ? 'Analyzing...' : 'Analyze'}
+                    </span>
+                    <TrendingUp className="w-4 h-4 relative z-10" />
+                  </motion.button>
                 </div>
                 {error && (
                   <p className="text-red-400 text-sm mt-2">{error}</p>
                 )}
               </div>
             </div>
-            <div className="relative hidden lg:flex items-center justify-center">
+
+            <div className="relative flex items-center justify-center mt-6 lg:mt-0">
               <ExampleWallets />
             </div>
           </div>
         </section>
 
-        <section className="px-6 md:px-20 pt-8">
-          <div className="max-w-[1200px] mx-auto flex flex-col gap-16">
-            <div className="flex flex-col gap-4 text-center items-center">
-              <h2 className="text-white text-3xl md:text-5xl font-bold tracking-tight">Core Reputation Metrics</h2>
-              <p className="text-slate-400 text-lg max-w-2xl">Our algorithm processes thousands of data points across the Starknet ecosystem to determine your credibility.</p>
+        <section className="px-3 md:px-20 pt-8 pb-8 md:py-24">
+          <div className="max-w-[1200px] mx-auto flex flex-col gap-8 md:gap-16">
+            <div className="flex flex-col gap-3 md:gap-4 text-center items-center">
+              <h2 className="text-2xl md:text-3xl lg:text-5xl font-bold tracking-tight">Core Reputation Metrics</h2>
+              <p className="text-sm md:text-lg text-slate-400 max-w-2xl">Our algorithm processes thousands of data points across the Starknet ecosystem to determine your credibility.</p>
             </div>
-            <div className="grid md:grid-cols-3 gap-8">
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
               {features.map((feature, i) => (
-                <div key={i} className="flex flex-col gap-6 rounded-2xl border border-primary/10 bg-[#12121a] p-8 glow-purple transition-all duration-300">
-                  <div className="size-14 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                <div key={i} className="flex flex-col gap-4 md:gap-6 rounded-2xl border border-primary/10 bg-[#12121a] p-4 md:p-8 glow-purple transition-all duration-300">
+                  <div className="size-12 md:size-14 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                     {feature.icon}
                   </div>
-                  <div className="flex flex-col gap-3">
-                    <h3 className="text-white text-xl font-bold">{feature.title}</h3>
-                    <p className="text-slate-400 text-base leading-relaxed">{feature.desc}</p>
+                  <div className="flex flex-col gap-2 md:gap-3">
+                    <h3 className="text-white text-lg md:text-xl font-bold">{feature.title}</h3>
+                    <p className="text-slate-400 text-sm md:text-base leading-relaxed">{feature.desc}</p>
                   </div>
-                  <div className="mt-auto pt-4 border-t border-white/5">
-                    <span className="text-xs font-bold text-primary uppercase tracking-widest">{feature.weight}</span>
+                  <div className="mt-auto pt-3 md:pt-4 border-t border-white/5">
+                    <p className="text-primary text-xs md:text-sm font-medium">{feature.weight}</p>
                   </div>
                 </div>
               ))}
@@ -168,20 +208,20 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="px-6 md:px-20 py-24 relative overflow-hidden">
+        <section className="px-4 md:px-20 py-12 md:py-24 relative overflow-hidden">
           <div className="absolute inset-0 -z-10">
-            <div className="absolute top-0 right-0 w-[50%] h-full bg-primary/5 blur-[150px] rotate-12"></div>
+            <div className="absolute top-0 right-0 w-[50%] h-full bg-primary/5 blur-[100px] md:blur-[150px] rotate-12"></div>
           </div>
-          <div className="max-w-[1000px] mx-auto bg-gradient-to-br from-primary/20 to-accent/5 rounded-[2.5rem] p-12 md:p-20 text-center border border-white/10 backdrop-blur-sm relative overflow-hidden">
-            <div className="absolute -top-10 -right-10 size-40 bg-accent/20 rounded-full blur-3xl"></div>
-            <div className="relative z-10 flex flex-col items-center gap-8">
-              <h2 className="text-white text-4xl md:text-5xl font-bold tracking-tight">Ready to see where you stand?</h2>
-              <p className="text-slate-300 text-lg md:text-xl max-w-2xl leading-relaxed">Analyze your Starknet credit health, DeFi reputation, and social identity with our advanced scoring engine.</p>
+          <div className="max-w-[1000px] mx-auto bg-gradient-to-br from-primary/20 to-accent/5 rounded-2xl md:rounded-[2.5rem] p-6 md:p-12 lg:p-20 text-center border border-white/10 backdrop-blur-sm relative overflow-hidden">
+            <div className="absolute -top-10 -right-10 size-24 md:size-40 bg-accent/20 rounded-full blur-2xl md:blur-3xl"></div>
+            <div className="relative z-10 flex flex-col items-center gap-6 md:gap-8">
+              <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold tracking-tight">Ready to see where you stand?</h2>
+              <p className="text-sm md:text-lg text-slate-300 max-w-2xl leading-relaxed">Analyze your Starknet credit health, DeFi reputation, and social identity with our advanced scoring engine.</p>
               <button 
-                onClick={handleAnalyze}
-                className="bg-primary hover:bg-primary/90 text-white px-10 py-4 rounded-xl font-bold text-lg transition-all shadow-xl shadow-primary/20"
+                onClick={() => document.getElementById('wallet-input')?.scrollIntoView({ behavior: 'smooth' })}
+                className="bg-primary hover:bg-primary/90 text-white px-6 md:px-10 py-3 md:py-4 rounded-xl font-bold text-sm md:text-lg transition-all shadow-xl shadow-primary/20"
               >
-                Get Started Now
+                Get Your Score
               </button>
             </div>
           </div>

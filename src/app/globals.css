@@ -40,6 +40,11 @@ body {
   font-family: 'Space Grotesk', sans-serif;
   position: relative;
   min-height: 100vh;
+  overflow-x: hidden;
+}
+
+html {
+  overflow-x: hidden;
 }
 
 .neon-glow {

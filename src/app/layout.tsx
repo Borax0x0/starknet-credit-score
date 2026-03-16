@@ -4,7 +4,28 @@ import { NetworkProvider } from "@/components/NetworkProvider";
 
 export const metadata: Metadata = {
   title: "Starknet Credit Score",
-  description: "AI-generated credit score and personality profile based on your Starknet wallet activity",
+  description: "Discover your Starknet wallet reputation. AI-powered credit score and personality analysis.",
+  openGraph: {
+    title: "Starknet Credit Score",
+    description: "Discover your Starknet wallet reputation. AI-powered credit score and personality analysis.",
+    type: "website",
+    url: "https://starknet-creditscore.vercel.app",
+    siteName: "Starknet Credit Score",
+    images: [
+      {
+        url: "https://starknet-creditscore.vercel.app/og-preview.png",
+        width: 1200,
+        height: 630,
+        alt: "Starknet Credit Score",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Starknet Credit Score",
+    description: "Discover your Starknet wallet reputation. AI-powered credit score and personality analysis.",
+    images: ["https://starknet-creditscore.vercel.app/og-preview.png"],
+  },
 };
 
 export default function RootLayout({
