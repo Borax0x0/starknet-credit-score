@@ -27,16 +27,24 @@ const TOKENS: Record<string, { address: string; selector: 'balanceOf' | 'balance
 };
 
 // Starknet mainnet RPC (User-configured or dRPC fallback)
-const RPC_URL = process.env.NEXT_PUBLIC_STARKNET_MAINNET || 'https://starknet.drpc.org';
-const provider = new RpcProvider({ nodeUrl: RPC_URL });
+const MAINNET_RPC = process.env.NEXT_PUBLIC_STARKNET_MAINNET || 'https://starknet.drpc.org';
+const SEPOLIA_RPC = process.env.NEXT_PUBLIC_STARKNET_SEPOLIA || 'https://starknet-sepolia.drpc.org';
+
+function getProvider(network: string = 'mainnet') {
+  const rpcUrl = network === 'sepolia' ? SEPOLIA_RPC : MAINNET_RPC;
+  return new RpcProvider({ nodeUrl: rpcUrl });
+}
+
+const provider = getProvider('mainnet');
 
 /**
  * Fetch a token balance using provider.callContract.
  * Uses the specific ABI entrypoint mapped to the token.
  */
-async function getTokenBalance(token: { address: string; selector: 'balanceOf' | 'balance_of' }, walletAddress: string): Promise<bigint> {
+async function getTokenBalance(token: { address: string; selector: 'balanceOf' | 'balance_of' }, walletAddress: string, network: string = 'mainnet'): Promise<bigint> {
+  const rpcProvider = getProvider(network);
   try {
-    const result = await provider.callContract({
+    const result = await rpcProvider.callContract({
       contractAddress: token.address,
       entrypoint: token.selector,
       calldata: [walletAddress],
@@ -62,7 +70,8 @@ async function getTokenBalance(token: { address: string; selector: 'balanceOf' |
 /**
  * Find the block a contract was deployed by binary searching getClassHashAt
  */
-async function findDeploymentBlock(address: string, latestBlockNum: number): Promise<number | null> {
+async function findDeploymentBlock(address: string, latestBlockNum: number, network: string = 'mainnet'): Promise<number | null> {
+  const rpcProvider = getProvider(network);
   let low = 0;
   let high = latestBlockNum;
   let deployedBlock: number | null = null;
@@ -71,7 +80,7 @@ async function findDeploymentBlock(address: string, latestBlockNum: number): Pro
   while (low <= high) {
     const mid = Math.floor((low + high) / 2);
     try {
-      await provider.getClassHashAt(address, mid);
+      await rpcProvider.getClassHashAt(address, mid);
       // It existed at 'mid', so it might have been deployed earlier
       deployedBlock = mid;
       high = mid - 1;
@@ -84,11 +93,13 @@ async function findDeploymentBlock(address: string, latestBlockNum: number): Pro
 }
 
 /**
- * Fetch wallet metrics from Starknet mainnet using starknet.js RpcProvider.
+ * Fetch wallet metrics from Starknet using starknet.js RpcProvider.
  * Uses nonce as a tx count proxy (standard RPC, no API key needed).
  */
-export async function getWalletMetrics(address: string): Promise<WalletMetrics> {
+export async function getWalletMetrics(address: string, network: string = 'mainnet'): Promise<WalletMetrics> {
   const now = new Date();
+  const rpcProvider = getProvider(network);
+  console.log(`[DEBUG NETWORK] Using ${network} network`);
 
   // Normalize address — pad to full 66-char Starknet format (0x + 64 hex digits)
   // Important: num.toHex strips leading zeros which breaks RPC lookups for addresses like 0x00adce...
@@ -98,7 +109,7 @@ export async function getWalletMetrics(address: string): Promise<WalletMetrics> 
   // 1. Check if the account is deployed (has a class hash)
   let isDeployed = false;
   try {
-    await provider.getClassHashAt(normalizedAddress);
+    await rpcProvider.getClassHashAt(normalizedAddress);
     isDeployed = true;
   } catch {
     // Account not deployed — fresh/empty wallet
@@ -108,7 +119,7 @@ export async function getWalletMetrics(address: string): Promise<WalletMetrics> 
   let txCount = 0;
   if (isDeployed) {
     try {
-      const nonceRaw = await provider.getNonceForAddress(normalizedAddress);
+      const nonceRaw = await rpcProvider.getNonceForAddress(normalizedAddress);
       // getNonceForAddress returns a hex string (e.g. "0x580f3"). Must be parsed as hex.
       txCount = parseInt(nonceRaw as string, 16);
 
@@ -126,13 +137,13 @@ export async function getWalletMetrics(address: string): Promise<WalletMetrics> 
   }
 
   // 3. Get token balances using proper callContract for top tokens
-  console.log(`[DEBUG TOKENS] Fetching balances for top tokens...`);
-  const strkBalanceRaw = await getTokenBalance(TOKENS.STRK, normalizedAddress);
-  const usdcBridgedBalanceRaw = await getTokenBalance(TOKENS.USDC_BRIDGED, normalizedAddress);
-  const usdcNativeBalanceRaw = await getTokenBalance(TOKENS.USDC_NATIVE, normalizedAddress);
-  const ethBalanceRaw = await getTokenBalance(TOKENS.ETH, normalizedAddress);
-  const usdtBalanceRaw = await getTokenBalance(TOKENS.USDT, normalizedAddress);
-  const wbtcBalanceRaw = await getTokenBalance(TOKENS.WBTC, normalizedAddress);
+  console.log(`[DEBUG TOKENS] Fetching balances for top tokens on ${network}...`);
+  const strkBalanceRaw = await getTokenBalance(TOKENS.STRK, normalizedAddress, network);
+  const usdcBridgedBalanceRaw = await getTokenBalance(TOKENS.USDC_BRIDGED, normalizedAddress, network);
+  const usdcNativeBalanceRaw = await getTokenBalance(TOKENS.USDC_NATIVE, normalizedAddress, network);
+  const ethBalanceRaw = await getTokenBalance(TOKENS.ETH, normalizedAddress, network);
+  const usdtBalanceRaw = await getTokenBalance(TOKENS.USDT, normalizedAddress, network);
+  const wbtcBalanceRaw = await getTokenBalance(TOKENS.WBTC, normalizedAddress, network);
 
   const usdcCombinedBalanceRaw = usdcBridgedBalanceRaw + usdcNativeBalanceRaw;
 
@@ -205,19 +216,19 @@ export async function getWalletMetrics(address: string): Promise<WalletMetrics> 
       console.log('No STARKSCAN_API_KEY provided, fetching true block data via RPC binary search...');
       try {
         // Confirm the wallet exists
-        await provider.getClassHashAt(normalizedAddress, 'latest');
+        await rpcProvider.getClassHashAt(normalizedAddress, 'latest');
 
-        const latestBlock = await provider.getBlock('latest');
+        const latestBlock = await rpcProvider.getBlock('latest');
         console.log(`[DEBUG AGE] Latest block from RPC: ${latestBlock.block_number}`);
 
         // Find exact deployment block
-        const deployedBlock = await findDeploymentBlock(normalizedAddress, latestBlock.block_number);
+        const deployedBlock = await findDeploymentBlock(normalizedAddress, latestBlock.block_number, network);
 
         if (deployedBlock !== null && latestBlock.block_number) {
           console.log(`[DEBUG AGE] Wallet exact deployment block found: ${deployedBlock}`);
 
           // Get exact deployment block timestamp for true age calculation
-          const deploymentBlockData = await provider.getBlock(deployedBlock);
+          const deploymentBlockData = await rpcProvider.getBlock(deployedBlock);
 
           if (deploymentBlockData && 'timestamp' in deploymentBlockData) {
             const secondsElapsed = latestBlock.timestamp - deploymentBlockData.timestamp;

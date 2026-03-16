@@ -6,6 +6,7 @@ import { WalletMetrics } from '@/lib/starknet';
 interface WalletDNAProps {
     address: string;
     metrics: Partial<WalletMetrics> | null;
+    score?: number;
     size?: number;
 }
 
@@ -37,122 +38,159 @@ function mulberry32(a: number) {
     };
 }
 
-export function WalletDNA({ address, metrics, size = 400 }: WalletDNAProps) {
+function getTierColor(tier: string | undefined): { r: number; g: number; b: number } {
+    switch (tier) {
+        case 'Excellent':
+            return { r: 34, g: 197, b: 94 };
+        case 'Very Good':
+            return { r: 59, g: 130, b: 246 };
+        case 'Good':
+            return { r: 59, g: 130, b: 246 };
+        case 'Fair':
+            return { r: 234, g: 179, b: 8 };
+        case 'Poor':
+            return { r: 239, g: 68, b: 68 };
+        default:
+            return { r: 124, g: 58, b: 237 };
+    }
+}
+
+function getTierFromScore(score: number | undefined): string {
+    if (!score) return 'Poor';
+    if (score >= 750) return 'Excellent';
+    if (score >= 700) return 'Very Good';
+    if (score >= 600) return 'Good';
+    if (score >= 500) return 'Fair';
+    return 'Poor';
+}
+
+export function WalletDNA({ address, metrics, score, size = 400 }: WalletDNAProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const animationRef = useRef<number | null>(null);
 
     useEffect(() => {
         const canvas = canvasRef.current;
         const container = containerRef.current;
         if (!canvas || !metrics || !container) return;
 
+        console.log('WalletDNA rendering:', { address: address.slice(0, 8) + '...', txCount: metrics.txCount, uniqueTokens: metrics.uniqueTokens, score });
+
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
         const containerWidth = container.clientWidth;
         const containerHeight = container.clientHeight;
-        const drawSize = Math.min(containerWidth, containerHeight);
 
-        canvas.width = drawSize;
-        canvas.height = drawSize;
+        canvas.width = containerWidth;
+        canvas.height = containerHeight;
 
-        const width = drawSize;
-        const height = drawSize;
-        const cx = width / 2;
-        const cy = height / 2;
-
-        ctx.clearRect(0, 0, width, height);
+        const width = containerWidth;
+        const height = containerHeight;
 
         const seed = cyrb128(address);
         const rand = mulberry32(seed);
 
-        const age = metrics.walletAgeDays || 0;
-        let baseHue = rand() * 360;
-        if (age < 100) baseHue = 200 + rand() * 60;
-        else if (age > 365) baseHue = 20 + rand() * 40;
-        else baseHue = 100 + rand() * 80;
+        const txCount = metrics.txCount || 0;
+        const dotCount = Math.min(5 + Math.floor(txCount / 10), 25);
 
-        const txs = metrics.txCount || 0;
-        const minBranches = 3;
-        const branches = Math.min(minBranches + Math.floor(txs / 10), 24);
+        const uniqueTokens = metrics.uniqueTokens || 1;
+        const connectionDensity = Math.min(uniqueTokens * 2, 15);
 
-        const tokens = metrics.uniqueTokens || 1;
-        let symmetry = tokens;
-        if (symmetry > 8) symmetry = 8;
-
-        const strkVal = parseFloat(metrics.strkBalance || '0') / 1e18;
-        const usdcVal = parseFloat(metrics.usdcBalance || '0') / 1e6;
-        const totalEstVal = strkVal * 0.5 + usdcVal;
-        const minRadius = 10;
-        const centerRadius = Math.min(minRadius + Math.sqrt(totalEstVal) * 2, size * 0.2);
+        const walletAge = metrics.walletAgeDays || 0;
+        const baseDotSize = 2 + Math.min(walletAge / 100, 4);
 
         const daysInactive = metrics.daysSinceLastTx ?? 999;
-        let opacity = 1.0 - Math.min(daysInactive, 365) / 365;
-        opacity = Math.max(0.3, opacity);
+        const baseOpacity = Math.max(0.3, 1 - Math.min(daysInactive, 365) / 365);
 
-        ctx.globalAlpha = opacity;
+        const scoreValue = score || 0;
+        const tier = getTierFromScore(scoreValue);
+        const tierColor = getTierColor(tier);
 
-        const branchLength = (size / 2) * 0.8;
+        const nodes = Array.from({ length: dotCount }, () => ({
+            x: 50 + rand() * (width - 100),
+            y: 50 + rand() * (height - 100),
+            baseX: 0,
+            baseY: 0,
+            vx: (rand() - 0.5) * 0.3,
+            vy: (rand() - 0.5) * 0.3,
+            phase: rand() * Math.PI * 2,
+            pulseSpeed: 0.5 + rand() * 1
+        }));
 
-        for (let s = 0; s < symmetry; s++) {
-            const symOffset = (Math.PI * 2 * s) / symmetry;
+        nodes.forEach(node => {
+            node.baseX = node.x;
+            node.baseY = node.y;
+        });
 
-            for (let i = 0; i < branches; i++) {
-                const angle = (Math.PI * 2 * i) / branches + symOffset + (rand() * 0.2 - 0.1);
-                const length = branchLength * (0.5 + rand() * 0.5);
-                const hue = (baseHue + rand() * 40 - 20) % 360;
-                const widthVar = 2 + rand() * 4;
-
-                ctx.beginPath();
-                ctx.moveTo(cx, cy);
-
-                const cpX = cx + Math.cos(angle + 0.5) * (length * 0.5);
-                const cpY = cy + Math.sin(angle + 0.5) * (length * 0.5);
-                const endX = cx + Math.cos(angle) * length;
-                const endY = cy + Math.sin(angle) * length;
-
-                ctx.quadraticCurveTo(cpX, cpY, endX, endY);
-
-                ctx.strokeStyle = `hsla(${hue}, 80%, 60%, ${opacity})`;
-                ctx.lineWidth = widthVar;
-                ctx.lineCap = 'round';
-                ctx.stroke();
-
-                ctx.beginPath();
-                ctx.arc(endX, endY, widthVar * 1.5, 0, Math.PI * 2);
-                ctx.fillStyle = `hsla(${(hue + 30) % 360}, 90%, 70%, ${opacity + 0.2})`;
-                ctx.fill();
+        const connections: Array<[number, number]> = [];
+        for (let i = 0; i < nodes.length; i++) {
+            for (let j = i + 1; j < nodes.length; j++) {
+                const dx = nodes[i].x - nodes[j].x;
+                const dy = nodes[i].y - nodes[j].y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < Math.min(width, height) * 0.35 && rand() < connectionDensity / 20) {
+                    connections.push([i, j]);
+                }
             }
         }
 
-        ctx.beginPath();
-        ctx.arc(cx, cy, centerRadius, 0, Math.PI * 2);
+        nodes.forEach(node => {
+            node.baseX = node.x;
+            node.baseY = node.y;
+        });
 
-        const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, centerRadius);
-        gradient.addColorStop(0, `hsla(${baseHue}, 100%, 80%, ${opacity + 0.3})`);
-        gradient.addColorStop(1, `hsla(${baseHue}, 80%, 40%, ${opacity})`);
+        let time = 0;
 
-        ctx.fillStyle = gradient;
-        ctx.fill();
+        const animate = () => {
+            ctx.clearRect(0, 0, width, height);
+            time += 0.02;
 
-        ctx.beginPath();
-        ctx.arc(cx, cy, centerRadius * 0.5, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 255, 255, ${opacity * 0.5})`;
-        ctx.fill();
+            connections.forEach(([i, j]) => {
+                const fadePhase = Math.sin(time * 0.8 + i * 0.1 + j * 0.1) * 0.5 + 0.5;
+                const opacity = 0.1 + fadePhase * 0.3;
+                
+                ctx.strokeStyle = `rgba(${tierColor.r}, ${tierColor.g}, ${tierColor.b}, ${opacity * baseOpacity})`;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(nodes[i].x, nodes[i].y);
+                ctx.lineTo(nodes[j].x, nodes[j].y);
+                ctx.stroke();
+            });
 
-    }, [address, metrics, size]);
+            nodes.forEach((node) => {
+                node.x += node.vx;
+                node.y += node.vy;
 
-    useEffect(() => {
-        const handleResize = () => {
-            if (canvasRef.current && metrics && containerRef.current) {
-                const event = new Event('resize');
-                canvasRef.current.dispatchEvent(event);
-            }
+                if (node.x < 30 || node.x > width - 30) node.vx *= -1;
+                if (node.y < 30 || node.y > height - 30) node.vy *= -1;
+
+                const pulse = Math.sin(time * node.pulseSpeed + node.phase) * 0.5 + 0.5;
+                const dotSize = baseDotSize + pulse * 2;
+                const opacity = (0.6 + pulse * 0.4) * baseOpacity;
+
+                ctx.fillStyle = `rgba(${tierColor.r}, ${tierColor.g}, ${tierColor.b}, ${opacity})`;
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, dotSize, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = `rgba(${tierColor.r}, ${tierColor.g}, ${tierColor.b}, ${opacity * 0.2})`;
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, dotSize * 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            animationRef.current = requestAnimationFrame(animate);
         };
 
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, [metrics]);
+        animate();
+
+        return () => {
+            if (animationRef.current) {
+                cancelAnimationFrame(animationRef.current);
+            }
+        };
+    }, [address, metrics, score, size]);
 
     return (
         <div ref={containerRef} className="w-full h-full flex items-center justify-center">

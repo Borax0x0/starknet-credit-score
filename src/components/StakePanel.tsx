@@ -176,7 +176,7 @@ export function StakePanel({ walletAddress, strkBalance, network = 'mainnet', on
       <button
         onClick={handleStake}
         disabled={staking || !amount}
-        className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-black font-bold text-lg py-4 px-6 rounded-xl hover:from-green-400 hover:to-emerald-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="w-full bg-gradient-to-r from-[#EC5728] to-orange-600 text-white font-bold text-lg py-4 px-6 rounded-xl hover:from-[#EC5728]/90 hover:to-orange-600/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {staking ? (
           <>

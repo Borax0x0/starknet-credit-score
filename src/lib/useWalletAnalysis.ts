@@ -17,7 +17,7 @@ interface WalletAnalysis {
     error: string;
 }
 
-export function useWalletAnalysis(address: string): WalletAnalysis {
+export function useWalletAnalysis(address: string, network: string = 'mainnet'): WalletAnalysis {
     const [metrics, setMetrics] = useState<WalletMetrics | null>(null);
     const [score, setScore] = useState(0);
     const [tier, setTier] = useState('');
@@ -34,7 +34,7 @@ export function useWalletAnalysis(address: string): WalletAnalysis {
 
             try {
                 // Fetch metrics from our server-side API (avoids CORS issues with Starknet RPC)
-                const metricsRes = await fetch(`/api/metrics?address=${encodeURIComponent(address)}`);
+                const metricsRes = await fetch(`/api/metrics?address=${encodeURIComponent(address)}&network=${network}`);
                 const metricsData = await metricsRes.json();
 
                 if (metricsData.error) {
@@ -86,7 +86,7 @@ export function useWalletAnalysis(address: string): WalletAnalysis {
         };
 
         analyze();
-    }, [address]);
+    }, [address, network]);
 
     return { metrics, score, tier, personality, loading, error };
 }
