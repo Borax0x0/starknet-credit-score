@@ -31,11 +31,11 @@ input:-webkit-autofill:active {
 }
 
 body {
-  background-color: var(--background);
+  background-color: #0a0a0f;
   background-image: 
-    linear-gradient(rgba(124, 58, 237, 0.15) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(124, 58, 237, 0.15) 1px, transparent 1px);
-  background-size: 40px 40px;
+    radial-gradient(circle at 50% 0%, rgba(124, 58, 237, 0.12) 0%, transparent 800px),
+    radial-gradient(circle at 100% 50%, rgba(236, 87, 40, 0.06) 0%, transparent 600px);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: 'Space Grotesk', sans-serif;
   position: relative;

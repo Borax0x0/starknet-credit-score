@@ -152,7 +152,15 @@ function AnimatedScore({ score }: { score: number }) {
   return <motion.span>{display}</motion.span>;
 }
 
-function MiniCard({ wallet }: { wallet: typeof EXAMPLE_WALLETS[0] }) {
+function MiniCard({ wallet, index }: { wallet: typeof EXAMPLE_WALLETS[0]; index: number }) {
+  const tierGlow: Record<string, string> = {
+    'Excellent': 'rgba(236, 87, 40, 0.15)',
+    'Very Good': 'rgba(124, 58, 237, 0.15)',
+    'Good': 'rgba(124, 58, 237, 0.15)',
+    'Fair': 'rgba(234, 179, 8, 0.15)',
+    'Poor': 'rgba(124, 58, 237, 0.15)',
+  };
+  
   const tierColor = {
     'Excellent': 'text-green-400',
     'Very Good': 'text-blue-400',
@@ -162,24 +170,34 @@ function MiniCard({ wallet }: { wallet: typeof EXAMPLE_WALLETS[0] }) {
   }[wallet.tier] || 'text-purple-400';
 
   const seed = cyrb128(wallet.address);
+  const isMiddle = index === 1;
+  const verticalOffset = isMiddle ? 0 : 12;
 
   return (
-    <Link href={`/score/${wallet.address}`} className="group">
+    <Link href={`/score/${wallet.address}`} className="group" style={{ zIndex: isMiddle ? 10 : 1 }}>
       <motion.div 
-        className="w-[220px] md:w-[200px] h-[200px] md:h-[240px] rounded-xl bg-[#12121a] border border-primary/20 overflow-hidden flex flex-col hover:border-primary/50 hover:scale-105 transition-all cursor-pointer relative flex-shrink-0"
+        className="w-[308px] md:w-[280px] h-[280px] md:h-[336px] rounded-xl bg-[#12121a] border border-primary/20 overflow-hidden flex flex-col hover:border-primary/50 transition-all cursor-pointer relative flex-shrink-0 group-hover:-translate-y-2"
         initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        animate={{ opacity: 1, y: -verticalOffset }}
         transition={{ duration: 0.5 }}
+        style={{ 
+          boxShadow: tierGlow[wallet.tier] || 'rgba(124, 58, 237, 0.15)',
+        }}
       >
+        <style jsx>{`
+          .group:hover {
+            box-shadow: rgba(124, 58, 237, 0.3) !important;
+          }
+        `}</style>
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
         <Constellation seed={seed} />
-        <div className="relative z-10 flex-1 flex flex-col justify-between p-3">
-          <div className="text-center mt-4">
-            <p className="text-2xl font-bold text-white"><AnimatedScore score={wallet.score} /></p>
-            <p className={`text-xs font-medium ${tierColor}`}>{wallet.tier}</p>
-            <p className="text-[10px] text-primary mt-0.5">{wallet.personality}</p>
+        <div className="relative z-10 flex-1 flex flex-col justify-between p-4">
+          <div className="text-center mt-6">
+            <p className="text-3xl font-bold text-white"><AnimatedScore score={wallet.score} /></p>
+            <p className={`text-sm font-medium ${tierColor}`}>{wallet.tier}</p>
+            <p className="text-xs text-primary mt-1">{wallet.personality}</p>
           </div>
-          <p className="text-[10px] text-zinc-500 text-center font-mono">
+          <p className="text-xs text-zinc-500 text-center font-mono">
             {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
           </p>
         </div>
@@ -190,11 +208,10 @@ function MiniCard({ wallet }: { wallet: typeof EXAMPLE_WALLETS[0] }) {
 
 export function ExampleWallets() {
   return (
-    <div className="flex flex-col items-center gap-3">
-      <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider">Example Wallets</p>
-      <div className="grid grid-cols-1 md:flex md:gap-3">
-        {EXAMPLE_WALLETS.map((wallet) => (
-          <MiniCard key={wallet.address} wallet={wallet} />
+    <div className="flex items-center justify-center">
+      <div className="flex gap-2">
+        {EXAMPLE_WALLETS.map((wallet, index) => (
+          <MiniCard key={wallet.address} wallet={wallet} index={index} />
         ))}
       </div>
     </div>

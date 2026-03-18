@@ -329,3 +329,81 @@ export function getScoreTier(score: number): string {
   if (score >= 600) return 'Fair';
   return 'Poor';
 }
+
+export interface ScoreBreakdownItem {
+  metric: string;
+  current: string;
+  target: string;
+  status: 'good' | 'weak' | 'critical';
+  impact: 'high' | 'medium' | 'low';
+}
+
+export function getScoreBreakdown(metrics: Partial<WalletMetrics>): ScoreBreakdownItem[] {
+  const breakdown: ScoreBreakdownItem[] = [];
+
+  const walletAge = metrics.walletAgeDays || 0;
+  const ageStatus = walletAge > 365 ? 'good' : walletAge > 180 ? 'weak' : 'critical';
+  const ageImpact = walletAge > 365 ? 'high' : 'medium';
+  breakdown.push({
+    metric: 'Wallet Age',
+    current: `${walletAge} days`,
+    target: '365+ days',
+    status: ageStatus,
+    impact: ageImpact,
+  });
+
+  const txCount = metrics.txCount || 0;
+  const txStatus = txCount > 100 ? 'good' : txCount > 20 ? 'weak' : 'critical';
+  const txImpact = 'high';
+  breakdown.push({
+    metric: 'Transaction Count',
+    current: txCount.toLocaleString(),
+    target: '100+ transactions',
+    status: txStatus,
+    impact: txImpact,
+  });
+
+  const tokens = metrics.uniqueTokens || 0;
+  const tokenStatus = tokens > 5 ? 'good' : tokens > 2 ? 'weak' : 'critical';
+  const tokenImpact = 'medium';
+  breakdown.push({
+    metric: 'Token Diversity',
+    current: `${tokens} tokens`,
+    target: '6+ tokens',
+    status: tokenStatus,
+    impact: tokenImpact,
+  });
+
+  const strkStatus = metrics.hasSTRK ? 'good' : 'critical';
+  breakdown.push({
+    metric: 'STRK Balance',
+    current: metrics.hasSTRK ? 'Yes' : 'None',
+    target: 'Hold STRK',
+    status: strkStatus,
+    impact: 'low',
+  });
+
+  const usdcStatus = metrics.hasUSDC ? 'good' : 'critical';
+  breakdown.push({
+    metric: 'USDC Balance',
+    current: metrics.hasUSDC ? 'Yes' : 'None',
+    target: 'Hold USDC',
+    status: usdcStatus,
+    impact: 'low',
+  });
+
+  const activity = metrics.daysSinceLastTx ?? null;
+  const actStatus = activity !== null && activity < 30 ? 'good' : activity !== null ? 'weak' : 'critical';
+  breakdown.push({
+    metric: 'Recent Activity',
+    current: activity !== null ? `${activity} days ago` : 'Unknown',
+    target: '<30 days',
+    status: actStatus,
+    impact: 'high',
+  });
+
+  return breakdown.sort((a, b) => {
+    const impactOrder = { high: 0, medium: 1, low: 2 };
+    return impactOrder[a.impact] - impactOrder[b.impact];
+  });
+}
