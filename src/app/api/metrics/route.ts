@@ -18,18 +18,11 @@ export async function GET(request: NextRequest) {
         const score = calculateScore(metrics);
         const tier = getScoreTier(score);
 
-        // Insert into Supabase
-        console.log('[DEBUG] About to check supabase client. Is null?', supabase === null);
-        console.log('[DEBUG] ENV URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'set' : 'NOT SET');
-        console.log('[DEBUG] ENV KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'set' : 'NOT SET');
-        
         if (supabase) {
-            console.log('[DEBUG] Supabase client initialized, attempting insert for:', address);
-            
             const strkBalance = metrics.strkBalance ? (BigInt(metrics.strkBalance) / BigInt(1e18)).toString() : '0';
             const usdcBalance = metrics.usdcBalance ? (BigInt(metrics.usdcBalance) / BigInt(1e6)).toString() : '0';
             
-            const { data, error: insertError } = await supabase
+            const { error: insertError } = await supabase
                 .from('wallet_scores')
                 .insert({
                     address: address.toLowerCase(),
@@ -44,12 +37,8 @@ export async function GET(request: NextRequest) {
                 });
 
             if (insertError) {
-                console.error('[DEBUG] Supabase insert error:', JSON.stringify(insertError));
-            } else {
-                console.log('[DEBUG] Supabase insert success:', JSON.stringify(data));
+                console.error('Supabase insert error:', insertError.message);
             }
-        } else {
-            console.log('[DEBUG] Supabase client is null - credentials may be missing');
         }
 
         return NextResponse.json({

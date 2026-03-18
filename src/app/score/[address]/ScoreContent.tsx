@@ -5,7 +5,7 @@ import { useWalletAnalysis } from '@/lib/useWalletAnalysis';
 import { WalletDNA } from '@/components/WalletDNA';
 import { StakePanel } from '@/components/StakePanel';
 import Link from 'next/link';
-import { TrendingUp, Wallet, Fingerprint, Zap, Calendar, DollarSign, BadgeCheck, Clock, BarChart2, Trophy } from 'lucide-react';
+import { TrendingUp, Wallet, Fingerprint, Zap, Calendar, DollarSign, BadgeCheck, Clock, BarChart2, Trophy, Lock } from 'lucide-react';
 import { motion, useSpring, useTransform } from 'framer-motion';
 
 interface Props {
@@ -252,6 +252,7 @@ export default function ScoreContent({ params, searchParams }: Props) {
               <StakePanel 
                 walletAddress={address}
                 strkBalance={metrics.strkBalance}
+                score={score}
                 network={network}
                 onStakeSuccess={() => setStaked(true)} 
               />
@@ -269,30 +270,49 @@ export default function ScoreContent({ params, searchParams }: Props) {
                   <p className="text-slate-400 mt-2">Stake your STRK tokens to unlock the &apos;Diamond Hands&apos; multiplier and increase your credit rating by up to 50 points.</p>
                 </div>
                 <div className="flex flex-col gap-3 min-w-[200px] w-full md:w-auto">
-                  <div className="bg-primary/20 rounded-lg px-4 py-2 border border-primary/30 flex justify-between items-center">
-                    <span className="text-xs text-slate-300">Current Multiplier</span>
-                    <span className="text-primary font-bold">1.0x</span>
-                  </div>
-                  <button
-                    onClick={async () => {
-                      try {
-                        const { StarkZap } = await import('starkzap');
-                        const sdk = new StarkZap({ network });
-                        const wallet = await sdk.connectCartridge();
-                        const connectedAddr = wallet.address.toString().toLowerCase();
-                        if (connectedAddr !== address.toLowerCase()) {
-                          alert('Please connect the wallet you are viewing');
-                          return;
-                        }
-                        setShowStakePanel(true);
-                      } catch (err) {
-                        console.error('Connection failed:', err);
-                      }
-                    }}
-                    className="bg-[#EC5728] hover:bg-[#EC5728]/90 text-white font-bold py-3 px-8 rounded-lg transition-all shadow-lg shadow-[#EC5728]/25"
-                  >
-                    Start Staking
-                  </button>
+                  {score >= 700 ? (
+                    <>
+                      <div className="bg-[#EC5728]/20 rounded-lg px-4 py-2 border border-[#EC5728]/30 flex justify-between items-center">
+                        <span className="text-xs text-slate-300">Staking Status</span>
+                        <span className="text-[#EC5728] font-bold">Unlocked</span>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          try {
+                            const { StarkZap } = await import('starkzap');
+                            const sdk = new StarkZap({ network });
+                            const wallet = await sdk.connectCartridge();
+                            const connectedAddr = wallet.address.toString().toLowerCase();
+                            if (connectedAddr !== address.toLowerCase()) {
+                              alert('Please connect the wallet you are viewing');
+                              return;
+                            }
+                            setShowStakePanel(true);
+                          } catch (err) {
+                            console.error('Connection failed:', err);
+                          }
+                        }}
+                        className="bg-[#EC5728] hover:bg-[#EC5728]/90 text-white font-bold py-3 px-8 rounded-lg transition-all shadow-lg shadow-[#EC5728]/25"
+                      >
+                        Start Staking
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="bg-purple-900/30 rounded-lg px-4 py-2 border border-purple-500/30 flex justify-between items-center">
+                        <span className="text-xs text-slate-300">Points Needed</span>
+                        <span className="text-purple-400 font-bold">{700 - score}</span>
+                      </div>
+                      <button
+                        disabled
+                        className="bg-zinc-700 text-zinc-400 font-bold py-3 px-8 rounded-lg cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        <Lock className="w-4 h-4" />
+                        Score Too Low
+                      </button>
+                      <p className="text-xs text-zinc-500 text-center">Reach 700+ to unlock staking</p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

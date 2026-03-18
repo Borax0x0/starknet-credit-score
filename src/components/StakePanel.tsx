@@ -2,15 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { getSTRKPools, stakeSTRK, type StakingPool, type Network, createSDK } from '@/lib/staking';
+import { Lock, Unlock, Info } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface StakePanelProps {
   walletAddress: string;
   strkBalance: string;
+  score: number;
   network?: Network;
   onStakeSuccess?: () => void;
 }
 
-export function StakePanel({ walletAddress, strkBalance, network = 'mainnet', onStakeSuccess }: StakePanelProps) {
+export function StakePanel({ walletAddress, strkBalance, score, network = 'mainnet', onStakeSuccess }: StakePanelProps) {
   const [selectedPool, setSelectedPool] = useState<StakingPool | null>(null);
   const [balance, setBalance] = useState<string>('');
   const [amount, setAmount] = useState('');
@@ -19,6 +22,9 @@ export function StakePanel({ walletAddress, strkBalance, network = 'mainnet', on
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [txHash, setTxHash] = useState('');
+
+  const isUnlocked = score >= 700;
+  const pointsNeeded = Math.max(0, 700 - score);
 
   useEffect(() => {
     async function fetchData() {
@@ -116,8 +122,61 @@ export function StakePanel({ walletAddress, strkBalance, network = 'mainnet', on
     );
   }
 
+  if (!isUnlocked) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="p-6 space-y-5"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl opacity-50">💰</span>
+            <div>
+              <p className="font-bold text-xl text-zinc-400">Stake to Boost Your Score</p>
+              <p className="text-zinc-500">Earn yield while improving your credit score</p>
+            </div>
+          </div>
+          {selectedPool && (
+            <div className="text-right opacity-50">
+              <p className="text-green-400/50 font-bold text-2xl">{selectedPool.apr.toFixed(1)}%</p>
+              <p className="text-zinc-600 text-sm">APY</p>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-[#1a1a2e]/80 border border-purple-900/30 rounded-xl p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="size-10 rounded-lg bg-purple-900/30 flex items-center justify-center">
+              <Lock className="w-5 h-5 text-purple-400" />
+            </div>
+            <div>
+              <p className="text-purple-300 font-bold text-lg">Staking Locked</p>
+              <p className="text-purple-400/70 text-sm">Reach a score of 700+ to unlock STRK staking</p>
+            </div>
+          </div>
+          
+          <div className="bg-purple-900/20 rounded-lg p-4 text-center">
+            <p className="text-purple-400 text-sm mb-1">Points needed to unlock</p>
+            <p className="text-purple-300 font-bold text-3xl">{pointsNeeded}</p>
+            <p className="text-purple-500 text-xs mt-1">Your score: {score} / Required: 700</p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-center gap-2 text-zinc-500 text-sm">
+          <Info className="w-4 h-4" />
+          <span>Higher scores unlock better staking access powered by Starkzap SDK</span>
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
-    <div className="p-6 space-y-5">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="p-6 space-y-5"
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="text-3xl">💰</span>
@@ -133,6 +192,18 @@ export function StakePanel({ walletAddress, strkBalance, network = 'mainnet', on
           </div>
         )}
       </div>
+
+      <motion.div 
+        className="flex items-center gap-2 bg-[#EC5728]/10 border border-[#EC5728]/30 rounded-lg px-4 py-3"
+        initial={{ scale: 0.95 }}
+        animate={{ scale: 1 }}
+        transition={{ type: 'spring', stiffness: 300 }}
+      >
+        <Unlock className="w-5 h-5 text-[#EC5728]" />
+        <p className="text-[#EC5728] font-medium">
+          <span className="font-bold">Unlocked</span> — Your score qualifies you for STRK staking via Starkzap
+        </p>
+      </motion.div>
 
       {network === 'sepolia' && (
         <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg px-4 py-3 text-center">
@@ -176,7 +247,7 @@ export function StakePanel({ walletAddress, strkBalance, network = 'mainnet', on
       <button
         onClick={handleStake}
         disabled={staking || !amount}
-        className="w-full bg-gradient-to-r from-[#EC5728] to-orange-600 text-white font-bold text-lg py-4 px-6 rounded-xl hover:from-[#EC5728]/90 hover:to-orange-600/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="w-full bg-gradient-to-r from-[#EC5728] to-orange-600 text-white font-bold text-lg py-4 px-6 rounded-xl hover:from-[#EC5728]/90 hover:to-orange-600/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-[#EC5728]/20"
       >
         {staking ? (
           <>
@@ -190,9 +261,10 @@ export function StakePanel({ walletAddress, strkBalance, network = 'mainnet', on
         )}
       </button>
 
-      <p className="text-zinc-500 text-sm text-center">
-        Powered by Starkzap Paymaster • No gas required
-      </p>
-    </div>
+      <div className="flex items-center justify-center gap-2 text-zinc-500 text-sm">
+        <Info className="w-4 h-4" />
+        <span>Higher scores unlock better staking access powered by Starkzap SDK</span>
+      </div>
+    </motion.div>
   );
 }
