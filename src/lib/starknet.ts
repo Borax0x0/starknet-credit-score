@@ -11,6 +11,7 @@ export interface WalletMetrics {
   hasUSDC: boolean;
   firstTxDate: Date | null;
   daysSinceLastTx: number | null;
+  isRetry?: boolean;
 }
 
 // Starkscan API URL
@@ -27,8 +28,8 @@ const TOKENS: Record<string, { address: string; selector: 'balanceOf' | 'balance
 };
 
 // Starknet mainnet RPC (User-configured or dRPC fallback)
-const MAINNET_RPC = process.env.NEXT_PUBLIC_STARKNET_MAINNET || 'https://starknet.drpc.org';
-const SEPOLIA_RPC = process.env.NEXT_PUBLIC_STARKNET_SEPOLIA || 'https://starknet-sepolia.drpc.org';
+const MAINNET_RPC = process.env.NEXT_PUBLIC_STARKNET_RPC_URL || 'https://starknet.drpc.org';
+const SEPOLIA_RPC = process.env.NEXT_PUBLIC_STARKNET_TESTNET || 'https://starknet-sepolia.drpc.org';
 
 function getProvider(network: string = 'mainnet') {
   const rpcUrl = network === 'sepolia' ? SEPOLIA_RPC : MAINNET_RPC;
@@ -107,32 +108,45 @@ export async function getWalletMetrics(address: string, network: string = 'mainn
   const normalizedAddress = '0x' + rawHex.slice(2).padStart(64, '0');
 
   // 1. Check if the account is deployed (has a class hash)
+  // Retry logic to handle RPC inconsistencies
   let isDeployed = false;
-  try {
-    await rpcProvider.getClassHashAt(normalizedAddress);
-    isDeployed = true;
-  } catch {
-    // Account not deployed — fresh/empty wallet
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      await rpcProvider.getClassHashAt(normalizedAddress);
+      isDeployed = true;
+      break;
+    } catch (err) {
+      if (attempt === 2) {
+        console.log(`[DEBUG] getClassHashAt failed after 3 attempts for ${normalizedAddress}`);
+      } else {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
   }
 
   // 2. Get nonce (= number of transactions sent from this account)
   let txCount = 0;
   if (isDeployed) {
-    try {
-      const nonceRaw = await rpcProvider.getNonceForAddress(normalizedAddress);
-      // getNonceForAddress returns a hex string (e.g. "0x580f3"). Must be parsed as hex.
-      txCount = parseInt(nonceRaw as string, 16);
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const nonceRaw = await rpcProvider.getNonceForAddress(normalizedAddress);
+        txCount = parseInt(nonceRaw as string, 16);
 
-      console.log(`[DEBUG TX COUNT] Raw Nonce from provider: ${nonceRaw}`);
-      if (isNaN(txCount)) {
-        txCount = 0;
-      } else if (txCount > 10000) {
-        const scaledTxCount = Math.round(Math.log10(txCount + 1) * 1000);
-        console.warn(`[DEBUG TX COUNT] Value exceeded 10,000! Scaling logarithmically to ${scaledTxCount} to prevent typical anomaly scoring.`);
-        txCount = scaledTxCount;
+        console.log(`[DEBUG TX COUNT] Raw Nonce from provider: ${nonceRaw}`);
+        if (isNaN(txCount)) {
+          txCount = 0;
+        } else if (txCount > 10000) {
+          const scaledTxCount = Math.round(Math.log10(txCount + 1) * 1000);
+          console.warn(`[DEBUG TX COUNT] Value exceeded 10,000! Scaling logarithmically to ${scaledTxCount} to prevent typical anomaly scoring.`);
+          txCount = scaledTxCount;
+        }
+        break;
+      } catch (e) {
+        console.log(`Error fetching nonce (attempt ${attempt + 1}):`, e);
+        if (attempt < 2) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
       }
-    } catch (e) {
-      console.log('Error fetching nonce:', e);
     }
   }
 
@@ -285,6 +299,7 @@ export async function getWalletMetrics(address: string, network: string = 'mainn
     hasUSDC,
     firstTxDate,
     daysSinceLastTx,
+    isRetry: false,
   };
 }
 

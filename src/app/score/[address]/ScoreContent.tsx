@@ -36,7 +36,7 @@ export default function ScoreContent({ params, searchParams }: Props) {
     }
   }, [searchParams]);
 
-  const { metrics, score, personality, loading, error, refetch } = useWalletAnalysis(address, network);
+  const { metrics, score, personality, loading, error, refetch, noTransactions } = useWalletAnalysis(address, network);
   const [staked, setStaked] = useState(false);
   const [showStakePanel, setShowStakePanel] = useState(false);
 
@@ -76,6 +76,10 @@ export default function ScoreContent({ params, searchParams }: Props) {
             from { opacity: 0; transform: translateY(6px); }
             to { opacity: 1; transform: translateY(0); }
           }
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+          }
           .loading-fade-in {
             animation: loadingFade 0.3s ease-out forwards;
           }
@@ -86,8 +90,8 @@ export default function ScoreContent({ params, searchParams }: Props) {
           }
         `}</style>
         <div className="text-center space-y-6">
-          <div className="w-16 h-16 mx-auto animate-spin-slow">
-            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-primary">
+          <div className="w-16 h-16 mx-auto relative">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-primary animate-spin-slow">
               <path d="M24 18.4228L42 11.475V34.3663C42 34.7796 41.7457 35.1504 41.3601 35.2992L24 42V18.4228Z" fill="currentColor"/>
               <path d="M24 8.18819L33.4123 11.574L24 15.2071L14.5877 11.574L24 8.18819ZM9 15.8487L21 20.4805V37.6263L9 32.9945V15.8487ZM27 37.6263V20.4805L39 15.8487V32.9945L27 37.6263ZM25.354 2.29885C24.4788 1.98402 23.5212 1.98402 22.646 2.29885L4.98454 8.65208C3.7939 9.08038 3 10.2097 3 11.475V34.3663C3 36.0196 4.01719 37.5026 5.55962 38.098L22.9197 44.7987C23.6149 45.0671 24.3851 45.0671 25.0803 44.7987L42.4404 38.098C43.9828 37.5026 45 36.0196 45 34.3663V11.475C45 10.2097 44.2061 9.08038 43.0155 8.65208L25.354 2.29885Z" fill="currentColor"/>
             </svg>
@@ -98,6 +102,33 @@ export default function ScoreContent({ params, searchParams }: Props) {
           >
             {loadingMessages[loadingMsgIndex]}
           </p>
+          <p className="text-zinc-500 text-sm">Analyzing wallet...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (noTransactions) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0f] text-white flex items-center justify-center px-4">
+        <div className="text-center space-y-6 max-w-md">
+          <div className="size-16 mx-auto rounded-full bg-zinc-800 flex items-center justify-center">
+            <Wallet className="w-8 h-8 text-zinc-400" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-white">No Transactions Found</h2>
+            <p className="text-zinc-400">This wallet may be new or the RPC is slow — try again.</p>
+          </div>
+          <div className="flex flex-col gap-3">
+            <button 
+              onClick={refetch}
+              className="bg-[#EC5728] hover:bg-[#EC5728]/90 text-white px-6 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
+            >
+              <TrendingUp className="w-4 h-4" />
+              Retry Analysis
+            </button>
+            <Link href="/" className="text-primary hover:underline text-lg">Go back</Link>
+          </div>
         </div>
       </div>
     );

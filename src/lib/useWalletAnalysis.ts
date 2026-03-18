@@ -16,6 +16,7 @@ interface WalletAnalysis {
     loading: boolean;
     error: string;
     refetch: () => void;
+    noTransactions: boolean;
 }
 
 export function useWalletAnalysis(address: string, network: string = 'mainnet'): WalletAnalysis {
@@ -26,10 +27,12 @@ export function useWalletAnalysis(address: string, network: string = 'mainnet'):
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [addressKey, setAddressKey] = useState(0);
+    const [noTransactions, setNoTransactions] = useState(false);
 
     const analyze = async () => {
         setLoading(true);
         setError('');
+        setNoTransactions(false);
 
         try {
             const metricsRes = await fetch(`/api/metrics?address=${encodeURIComponent(address)}&network=${network}`);
@@ -48,6 +51,7 @@ export function useWalletAnalysis(address: string, network: string = 'mainnet'):
             setMetrics(data);
             setScore(metricsData.score);
             setTier(metricsData.tier);
+            setNoTransactions(metricsData.noTransactions || false);
 
             try {
                 const res = await fetch('/api/analyze', {
@@ -91,5 +95,5 @@ export function useWalletAnalysis(address: string, network: string = 'mainnet'):
         setAddressKey(prev => prev + 1);
     };
 
-    return { metrics, score, tier, personality, loading, error, refetch };
+    return { metrics, score, tier, personality, loading, error, refetch, noTransactions };
 }
