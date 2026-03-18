@@ -1,86 +1,105 @@
-# 🏦 Starknet Credit Score
+# Starknet Credit Score
 
-> **Your wallet has a reputation. Find out what it says.**
+**AI-powered credit scoring for Starknet wallets**
 
-A web app that turns any Starknet wallet address into an AI-generated credit score and personality profile — shareable as a card on Twitter/X.
-
-🔗 **Live App:** https://starknet-credit-score.vercel.app
-
----
-
-## What it does
-
-Paste any Starknet wallet address and get:
-
-- **A credit score (0–850)** based on real on-chain activity
-- **An AI-generated personality type** — are you a Diamond Hand, a Ghost Wallet, or a Degen Trader?
-- **A shareable card** — download as PNG and flex on Twitter
-
-No wallet required to look up any address. Connect your own wallet via Starkzap to analyze yourself instantly.
+[![Live Demo](https://img.shields.io/badge/Live-Demo-%23EC5728?style=for-the-badge)](https://starknet-credit-score.vercel.app)
+[![GitHub](https://img.shields.io/badge/Repo-GitHub-181717?style=for-the-badge&logo=github)](https://github.com/Borax0x0/starknet-credit-score)
 
 ---
 
-## Screenshots
+## The Problem
 
-> *(add screenshots here)*
+Starknet lacks an identity layer. DeFi protocols can't differentiate between a seasoned power user and a fresh bot wallet. There's no standard way to assess wallet trustworthiness or build reputation on-chain. This limits lending, airdrops, and trust-based applications.
 
 ---
 
-## How the score is calculated
+## What We Built
 
-| Metric | How it's measured |
-|--------|------------------|
-| Wallet age | First deployment date |
-| Transaction count | Nonce as proxy via standard RPC |
-| Asset diversity | Unique tokens held |
-| Holdings | STRK + USDC balances |
-| Recent activity | Days since last transaction |
+- **Credit Score** — Analyzes wallet age, transaction count, token diversity, and holdings to generate a 300-850 credit score with tier rankings (Poor → Excellent)
 
-**Score tiers:**
-- 750–850 → 💎 Excellent
-- 650–749 → 🟢 Good
-- 550–649 → 🟡 Fair
-- 400–549 → 🟠 Poor
-- 300–399 → 👻 Ghost Wallet
+- **Wallet DNA** — Deterministic generative constellation art unique to each wallet address and score tier
+
+- **AI Personality** — Groq-powered analysis that labels wallets as "DeFi Degen", "Diamond Hands", "Cautious Accumulator", and more
+
+- **Starkzap Staking** — Real STRK staking with gasless transactions via Cartridge Controller, unlocked only for wallets with score ≥700
+
+- **Leaderboard** — Top wallets ranked by credit score, stored in Supabase
+
+---
+
+## Starkzap Integration
+
+Starkzap SDK powers the core wallet experience:
+
+| Feature | Implementation |
+|---------|---------------|
+| Wallet Connection | `sdk.connectCartridge()` — one-click social login, no seed phrases |
+| Gasless Staking | Cartridge Controller paymaster covers all gas fees |
+| Score-Gated Access | UI locks staking behind 700+ credit score threshold |
+
+```typescript
+import { StarkZap, Amount } from 'starkzap';
+
+export async function stakeSTRK(wallet, poolAddress, amount) {
+  const sdk = new StarkZap({ network: 'mainnet' });
+  const tokens = await sdk.stakingTokens();
+  const STRK = tokens.find(t => t.symbol === 'STRK');
+  
+  const stakeAmount = Amount.parse(amount, STRK);
+  const tx = await wallet.stake(poolAddress, stakeAmount);
+  await tx.wait();
+  
+  return { txHash: tx.hash };
+}
+```
 
 ---
 
 ## Tech Stack
 
-- **Next.js** (App Router) + TypeScript
-- **Starkzap SDK** — wallet connection via Cartridge Controller
-- **Starknet.js** — on-chain data fetching
-- **Groq API** (llama-3.3-70b) — AI personality generation
-- **html2canvas** — shareable card download
-- **Vercel** — deployment
+| Frontend | Backend | Infrastructure |
+|----------|---------|----------------|
+| Next.js 16.1 (App Router) | Next.js API Routes | Vercel |
+| TypeScript | Starknet.js RPC | Supabase |
+| Tailwind CSS v4 | Groq API (llama-3.3-70b) | dRPC |
+| Framer Motion | Starkzap SDK | |
+| Three.js / React Three Fiber | | |
 
 ---
 
-## Built with Starkzap
+## Score Algorithm
 
-This project uses Starkzap for:
-- **Wallet connection** — one-click social login via Cartridge Controller (no seed phrases)
-- **On-chain data** — reading balances and wallet state
-- **Account abstraction** — seamless UX for users new to crypto
+5 metrics mapped to a 300-850 credit score range:
+
+| Metric | Weight | Measurement |
+|--------|--------|-------------|
+| Wallet Age | +150 max | Days since first transaction |
+| Transaction Count | +150 max | Nonce via RPC |
+| Token Diversity | +100 max | Unique token holdings |
+| STRK Balance | +50 | Native STRK holdings |
+| USDC Balance | +50 | Stablecoin holdings |
+| Recent Activity | +100 | Days since last transaction |
+
+**Tiers:** 750+ Excellent | 700-749 Very Good | 650-699 Good | 600-649 Fair | <600 Poor
 
 ---
 
-## Running locally
+## Run Locally
 
 ```bash
 git clone https://github.com/Borax0x0/starknet-credit-score
-cd Projects/starknet_credit_score
+cd starknet-credit-score
 npm install
 ```
 
-Create a `.env.local` file:
+Create `.env.local`:
 
 ```env
-NEXT_PUBLIC_STARKNET_RPC_URL=your_zan_or_alchemy_rpc_url
-GROQ_API_KEY=your_groq_api_key
+NEXT_PUBLIC_STARKNET_RPC_URL=https://your-rpc-url
+GROQ_API_KEY=your-groq-api-key
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
-
-Then:
 
 ```bash
 npm run dev
@@ -90,6 +109,10 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## Submission
+## Hackathon Submission
 
-Built for the [Starkzap Developer Challenge](https://forms.reform.app/starkware/StarkzapChallenge/4tabca) — Feb 24 to Mar 17, 2025.
+**Event:** Starkzap Developer Challenge  
+**Dates:** February 24 – March 17, 2026  
+**Track:** Best Overall / Most Creative
+
+Built with ❤️ on Starknet using Starkzap SDK
