@@ -45,7 +45,7 @@ export function useWalletAnalysis(address: string, network: string = 'mainnet'):
             const data: WalletMetrics = {
                 ...metricsData.metrics,
                 lastActivityDate: new Date(metricsData.metrics.lastActivityDate),
-                firstTxDate: new Date(metricsData.metrics.firstTxDate),
+                firstTxDate: metricsData.metrics.firstTxDate ? new Date(metricsData.metrics.firstTxDate) : null,
             };
 
             setMetrics(data);

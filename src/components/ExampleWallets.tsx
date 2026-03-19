@@ -153,51 +153,74 @@ function AnimatedScore({ score }: { score: number }) {
 }
 
 function MiniCard({ wallet, index }: { wallet: typeof EXAMPLE_WALLETS[0]; index: number }) {
+  const tierBorderColor: Record<string, string> = {
+    'Excellent': '#EC5728',
+    'Very Good': '#3b82f6',
+    'Good': '#7c3aed',
+    'Fair': '#eab308',
+    'Poor': '#ef4444',
+  };
+
   const tierGlow: Record<string, string> = {
     'Excellent': 'rgba(236, 87, 40, 0.15)',
     'Very Good': 'rgba(124, 58, 237, 0.15)',
     'Good': 'rgba(124, 58, 237, 0.15)',
     'Fair': 'rgba(234, 179, 8, 0.15)',
-    'Poor': 'rgba(124, 58, 237, 0.15)',
+    'Poor': 'rgba(239, 68, 68, 0.15)',
   };
-  
-  const tierColor = {
-    'Excellent': 'text-green-400',
-    'Very Good': 'text-blue-400',
-    'Good': 'text-blue-400',
-    'Fair': 'text-yellow-400',
-    'Poor': 'text-red-400',
-  }[wallet.tier] || 'text-purple-400';
+
+  const tierBgColor: Record<string, string> = {
+    'Excellent': 'rgba(236, 87, 40, 0.1)',
+    'Very Good': 'rgba(59, 130, 246, 0.1)',
+    'Good': 'rgba(124, 58, 237, 0.1)',
+    'Fair': 'rgba(234, 179, 8, 0.1)',
+    'Poor': 'rgba(239, 68, 68, 0.1)',
+  };
+
+  const tierTextColor: Record<string, string> = {
+    'Excellent': '#EC5728',
+    'Very Good': '#3b82f6',
+    'Good': '#7c3aed',
+    'Fair': '#eab308',
+    'Poor': '#ef4444',
+  };
 
   const seed = cyrb128(wallet.address);
   const isMiddle = index === 1;
   const verticalOffset = isMiddle ? 0 : 12;
+  const borderColor = tierBorderColor[wallet.tier] || '#7c3aed';
 
   return (
-    <Link href={`/score/${wallet.address}`} className="group" style={{ zIndex: isMiddle ? 10 : 1 }}>
-      <motion.div 
-        className="w-[308px] md:w-[280px] h-[280px] md:h-[336px] rounded-xl bg-[#12121a] border border-primary/20 overflow-hidden flex flex-col hover:border-primary/50 transition-all cursor-pointer relative flex-shrink-0 group-hover:-translate-y-2"
+    <Link href={`/score/${wallet.address}`} className="group block flex-1 min-w-[220px]">
+      <motion.div
+        className="w-full h-[300px] md:h-[360px] rounded-xl bg-[#12121a] overflow-hidden flex flex-col transition-colors cursor-pointer relative"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: -verticalOffset }}
-        transition={{ duration: 0.5 }}
-        style={{ 
-          boxShadow: tierGlow[wallet.tier] || 'rgba(124, 58, 237, 0.15)',
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        whileHover={{ scale: 1.03, transition: { duration: 0.15 } }}
+        style={{
+          borderTop: `3px solid ${borderColor}`,
+          boxShadow: `inset 0 8px 16px -4px ${borderColor}33, ${tierGlow[wallet.tier] || 'rgba(124, 58, 237, 0.15)'}`,
         }}
       >
-        <style jsx>{`
-          .group:hover {
-            box-shadow: rgba(124, 58, 237, 0.3) !important;
-          }
-        `}</style>
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
-        <Constellation seed={seed} />
-        <div className="relative z-10 flex-1 flex flex-col justify-between p-4">
-          <div className="text-center mt-6">
-            <p className="text-3xl font-bold text-white"><AnimatedScore score={wallet.score} /></p>
-            <p className={`text-sm font-medium ${tierColor}`}>{wallet.tier}</p>
-            <p className="text-xs text-primary mt-1">{wallet.personality}</p>
+        <div className="p-5 pb-0">
+          <div className="flex items-baseline gap-3">
+            <p className="text-4xl font-bold text-white"><AnimatedScore score={wallet.score} /></p>
+            <span
+              className="px-2 py-0.5 rounded-full text-xs font-medium"
+              style={{
+                backgroundColor: tierBgColor[wallet.tier] || 'rgba(124, 58, 237, 0.1)',
+                color: tierTextColor[wallet.tier] || '#7c3aed',
+              }}
+            >
+              {wallet.tier}
+            </span>
           </div>
-          <p className="text-xs text-zinc-500 text-center font-mono">
+          <p className="text-base mt-2" style={{ color: '#a0a0b0' }}>{wallet.personality}</p>
+        </div>
+        <div className="flex-1 relative mt-4">
+          <Constellation seed={seed} />
+          <p className="absolute bottom-3 left-0 right-0 text-center font-mono text-[10px] text-white/40">
             {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
           </p>
         </div>
@@ -208,8 +231,8 @@ function MiniCard({ wallet, index }: { wallet: typeof EXAMPLE_WALLETS[0]; index:
 
 export function ExampleWallets() {
   return (
-    <div className="flex items-center justify-center">
-      <div className="flex gap-2">
+    <div className="hidden lg:block w-full max-w-full pt-16 pr-4">
+      <div className="flex flex-row items-center gap-4 min-w-0">
         {EXAMPLE_WALLETS.map((wallet, index) => (
           <MiniCard key={wallet.address} wallet={wallet} index={index} />
         ))}

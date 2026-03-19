@@ -42,7 +42,9 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <NetworkProvider>
-          {children}
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            {children}
+          </div>
         </NetworkProvider>
       </body>
     </html>

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
 
 interface PersonalityResult {
   type: string;
@@ -8,7 +9,7 @@ interface PersonalityResult {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { metrics } = body;
+    const { metrics, address } = body;
 
     if (!metrics) {
       return NextResponse.json({ error: 'Missing metrics' }, { status: 400 });
@@ -77,6 +78,14 @@ Return ONLY valid JSON with this exact format: { "type": "...", "description": "
     }
 
     const personality: PersonalityResult = JSON.parse(jsonMatch[0]);
+
+    // Update Supabase with personality
+    if (supabase && address) {
+      await supabase
+        .from('wallet_scores')
+        .update({ personality_type: personality.type })
+        .eq('address', address.toLowerCase());
+    }
 
     return NextResponse.json(personality);
   } catch (error) {

@@ -16,7 +16,7 @@ export default function Home() {
       setError('Please enter a wallet address');
       return;
     }
-    if (!address.startsWith('0x') || address.length < 64) {
+    if (!address.startsWith('0x') || address.length < 66) {
       setError('Invalid Starknet address');
       return;
     }
@@ -26,24 +26,16 @@ export default function Home() {
   };
 
   const handleConnectWallet = async () => {
-    console.log('[DEBUG] handleConnectWallet called');
-    console.log('[DEBUG] Current address state:', address);
-    console.log('[DEBUG] Current URL:', window.location.href);
     setError('');
     setConnecting(true);
     try {
-      console.log('[DEBUG] Importing StarkZap...');
       const { StarkZap } = await import('starkzap');
-      console.log('[DEBUG] StarkZap imported, initializing SDK...');
       const sdk = new StarkZap({ network: 'mainnet' });
-      console.log('[DEBUG] SDK initialized, calling connectCartridge...');
       const wallet = await sdk.connectCartridge();
-      console.log('[DEBUG] connectCartridge returned:', wallet);
       const walletAddress = wallet.address.toString();
-      console.log('[DEBUG] Wallet address:', walletAddress);
       window.location.href = `/score/${walletAddress}`;
     } catch (err) {
-      console.error('[DEBUG] Wallet connection error:', err);
+      console.error('Wallet connection error:', err);
       setError('Failed to connect wallet. Please try again or enter address manually.');
       setConnecting(false);
     }
@@ -72,7 +64,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen text-slate-100 flex flex-col">
-      <header className="flex items-center justify-between border-b border-primary/20 px-6 md:px-20 py-4 backdrop-blur-md sticky top-0 z-50 bg-[#0a0a0f]/50">
+      <header className="flex items-center justify-between border-b border-primary/20 px-6 md:px-20 py-4 backdrop-blur-md fixed top-0 left-0 right-0 z-50 bg-[#0a0a0f]/80">
         <a href="/" className="flex items-center gap-3">
           <div className="size-8 text-primary">
             <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
@@ -85,10 +77,7 @@ export default function Home() {
         <div className="flex items-center gap-4">
           <button 
             type="button"
-            onClick={(e) => {
-              console.log('[DEBUG] Button clicked');
-              handleConnectWallet();
-            }}
+            onClick={handleConnectWallet}
             disabled={connecting}
             className="md:hidden bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all border border-[#EC5728]/30 disabled:opacity-50"
           >
@@ -104,10 +93,7 @@ export default function Home() {
             </nav>
             <button 
               type="button"
-              onClick={(e) => {
-                console.log('[DEBUG] Button clicked');
-                handleConnectWallet();
-              }}
+              onClick={handleConnectWallet}
               disabled={connecting}
               className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg text-sm font-bold transition-all border border-[#EC5728]/30 disabled:opacity-50"
             >
@@ -117,8 +103,8 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="flex-1">
-        <section className="relative px-3 md:px-20 pb-8 lg:pb-10 overflow-hidden">
+      <main className="flex-1 pt-20">
+        <section className="relative px-6 md:px-20 pb-8 lg:pb-10 overflow-visible">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10">
             <div className="absolute top-0 left-1/4 w-48 h-48 md:w-96 md:h-96 bg-primary/20 rounded-full blur-[80px] md:blur-[120px]"></div>
             <div className="absolute bottom-0 right-1/4 w-48 h-48 md:w-96 md:h-96 bg-accent/10 rounded-full blur-[80px] md:blur-[120px]"></div>
@@ -176,7 +162,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="relative flex items-center justify-center mt-6 lg:mt-0">
+            <div className="relative flex items-center justify-center pr-4 mt-6 lg:mt-0 lg:self-end">
               <ExampleWallets />
             </div>
           </div>
