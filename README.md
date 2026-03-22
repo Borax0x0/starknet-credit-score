@@ -175,13 +175,4 @@ Live at: https://starknet-credit-score.vercel.app
 ## Built By
 
 [@0xborax](https://twitter.com/0xborax)  
-Starkzap Developer Challenge — February 24 – March 23, 2026
-```
-
----
-
-## Awesome-Starkzap PR Description
-
-**PR Title:**
-```
-Add Starknet Credit Score — on-chain identity and score-gated staking
+Built for the [Starkzap Developer Challenge](https://github.com/keep-starknet-strange/starkzap)
