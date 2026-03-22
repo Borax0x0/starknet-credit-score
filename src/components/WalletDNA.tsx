@@ -74,8 +74,6 @@ export function WalletDNA({ address, metrics, score, size = 400 }: WalletDNAProp
         const container = containerRef.current;
         if (!canvas || !metrics || !container) return;
 
-        console.log('WalletDNA rendering:', { address: address.slice(0, 8) + '...', txCount: metrics.txCount, uniqueTokens: metrics.uniqueTokens, score });
-
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
@@ -145,14 +143,14 @@ export function WalletDNA({ address, metrics, score, size = 400 }: WalletDNAProp
         const animate = () => {
             ctx.clearRect(0, 0, width, height);
             time += 0.02;
-            
+
             const fadeIn = Math.min(1, time * 1);
             const fadeInOpacity = 0.2 + fadeIn * 0.8;
 
             connections.forEach(([i, j]) => {
                 const fadePhase = Math.sin(time * 0.8 + i * 0.1 + j * 0.1) * 0.5 + 0.5;
                 const opacity = (0.1 + fadePhase * 0.3) * baseOpacity * fadeInOpacity;
-                
+
                 ctx.strokeStyle = `rgba(${tierColor.r}, ${tierColor.g}, ${tierColor.b}, ${opacity})`;
                 ctx.lineWidth = 1;
                 ctx.beginPath();

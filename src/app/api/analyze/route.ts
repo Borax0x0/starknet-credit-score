@@ -79,11 +79,13 @@ Return ONLY valid JSON with this exact format: { "type": "...", "description": "
 
     const personality: PersonalityResult = JSON.parse(jsonMatch[0]);
 
-    // Update Supabase with personality
     if (supabase && address) {
       await supabase
         .from('wallet_scores')
-        .update({ personality_type: personality.type })
+        .update({ 
+          personality_type: personality.type,
+          personality_description: personality.description 
+        })
         .eq('address', address.toLowerCase());
     }
 

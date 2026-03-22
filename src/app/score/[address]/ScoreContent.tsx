@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useWalletAnalysis } from "@/lib/useWalletAnalysis";
-import { getScoreBreakdown } from "@/lib/starknet";
+import { getScoreBreakdown, calculateScore, getScoreTier as getScoreTierFromLib } from "@/lib/starknet";
 import { WalletDNA } from "@/components/WalletDNA";
 import { StakePanel } from "@/components/StakePanel";
 import Link from "next/link";
@@ -22,6 +22,167 @@ import { motion, useSpring, useTransform } from "framer-motion";
 interface Props {
   params: Promise<{ address: string }>;
   searchParams?: Promise<{ network?: string }>;
+}
+
+interface CreditScoreCardProps {
+  score?: number;
+  tier?: string;
+  personalityType?: string;
+  walletAddress?: string;
+  children?: React.ReactNode;
+  fromCache?: boolean;
+}
+
+function CreditScoreCard({
+  score = 750,
+  tier = 'excellent',
+  personalityType = 'Diamond Hand',
+  walletAddress = '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+  children,
+  fromCache = false,
+}: CreditScoreCardProps) {
+  const topRef = useRef<HTMLDivElement>(null);
+  const rightRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const leftRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const animateBorder = () => {
+      const now = Date.now() / 1000;
+      const speed = 0.5;
+      const topX = Math.sin(now * speed) * 100;
+      const rightY = Math.cos(now * speed) * 100;
+      const bottomX = Math.sin(now * speed + Math.PI) * 100;
+      const leftY = Math.cos(now * speed + Math.PI) * 100;
+      if (topRef.current) topRef.current.style.transform = `translateX(${topX}%)`;
+      if (rightRef.current) rightRef.current.style.transform = `translateY(${rightY}%)`;
+      if (bottomRef.current) bottomRef.current.style.transform = `translateX(${bottomX}%)`;
+      if (leftRef.current) leftRef.current.style.transform = `translateY(${leftY}%)`;
+      requestAnimationFrame(animateBorder);
+    };
+    const animationId = requestAnimationFrame(animateBorder);
+    return () => cancelAnimationFrame(animationId);
+  }, []);
+
+  const tierColors: Record<string, string> = {
+    'Excellent': '#f59e0b',
+    'Very Good': '#7c3aed',
+    'Good': '#0891b2',
+    'Fair': '#EC5728',
+    'Poor': '#ef4444',
+  };
+
+  const tierLabels: Record<string, string> = {
+    'Excellent': 'Excellent',
+    'Very Good': 'Very Good',
+    'Good': 'Good',
+    'Fair': 'Fair',
+    'Poor': 'Poor',
+  };
+
+  const borderColor = tierColors[tier] || tierColors['Good'];
+  const tierLabel = tierLabels[tier];
+
+  return (
+    <div className="relative w-full max-w-[380px] aspect-[2/3] bg-[#0d0d14] rounded-2xl overflow-hidden shadow-2xl">
+      <div className="absolute top-0 left-0 w-full h-[3px]" style={{ backgroundColor: borderColor }}></div>
+
+      <div className="absolute top-0 left-0 w-full h-0.5 overflow-hidden opacity-50">
+        <div
+          ref={topRef}
+          className="absolute top-0 left-0 w-full h-full"
+          style={{
+            background: `linear-gradient(to right, transparent, ${borderColor}, transparent)`,
+          }}
+        ></div>
+      </div>
+
+      <div className="absolute top-0 right-0 w-0.5 h-full overflow-hidden opacity-50">
+        <div
+          ref={rightRef}
+          className="absolute top-0 left-0 w-full h-full"
+          style={{
+            background: `linear-gradient(to bottom, transparent, ${borderColor}, transparent)`,
+          }}
+        ></div>
+      </div>
+
+      <div className="absolute bottom-0 left-0 w-full h-0.5 overflow-hidden opacity-50">
+        <div
+          ref={bottomRef}
+          className="absolute top-0 left-0 w-full h-full"
+          style={{
+            background: `linear-gradient(to right, transparent, ${borderColor}, transparent)`,
+          }}
+        ></div>
+      </div>
+
+      <div className="absolute top-0 left-0 w-0.5 h-full overflow-hidden opacity-50">
+        <div
+          ref={leftRef}
+          className="absolute top-0 left-0 w-full h-full"
+          style={{
+            background: `linear-gradient(to bottom, transparent, ${borderColor}, transparent)`,
+          }}
+        ></div>
+      </div>
+
+      <div className="relative z-10 flex flex-col h-full p-5 md:p-6">
+        <div className="flex items-baseline gap-2 mb-1">
+          <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight">{score}</h1>
+          <span
+            className="px-2 py-0.5 text-[10px] font-semibold rounded inline-block"
+            style={{
+              backgroundColor: `${borderColor}20`,
+              color: borderColor,
+              border: `1px solid ${borderColor}40`,
+            }}
+          >
+            {tierLabel}
+          </span>
+        </div>
+
+        <p className="text-slate-400 text-xs font-medium mb-3">{personalityType}</p>
+
+        <div className="flex-1 relative rounded-xl overflow-hidden bg-black/20 border border-white/5">
+          {children}
+
+          <div
+            className="absolute top-4 right-4 w-2 h-2 rounded-full animate-pulse"
+            style={{ backgroundColor: borderColor }}
+          ></div>
+          <div
+            className="absolute bottom-4 left-4 w-1.5 h-1.5 rounded-full animate-pulse"
+            style={{ backgroundColor: borderColor, animationDelay: '0.5s' }}
+          ></div>
+          <div
+            className="absolute top-1/2 right-6 w-1 h-1 rounded-full animate-pulse"
+            style={{ backgroundColor: borderColor, animationDelay: '1s' }}
+          ></div>
+        </div>
+
+        <div className="mt-3">
+          <p className="text-slate-600 text-[10px] font-mono tracking-wider truncate">
+            {walletAddress}
+          </p>
+          {fromCache && (
+            <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 text-[10px] font-medium">
+              ⚡ Instant load
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div
+        className="absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl opacity-20"
+        style={{ backgroundColor: borderColor }}
+      ></div>
+      <div
+        className="absolute -bottom-20 -left-20 w-40 h-40 rounded-full blur-3xl opacity-20"
+        style={{ backgroundColor: borderColor }}
+      ></div>
+    </div>
+  );
 }
 
 export default function ScoreContent({ params, searchParams }: Props) {
@@ -55,9 +216,28 @@ export default function ScoreContent({ params, searchParams }: Props) {
     error,
     refetch,
     noTransactions,
+    fromCache,
   } = useWalletAnalysis(address, network);
   const [staked, setStaked] = useState(false);
   const [showStakePanel, setShowStakePanel] = useState(false);
+  const [showSimulator, setShowSimulator] = useState(false);
+  const [simWalletAge, setSimWalletAge] = useState(0);
+  const [simTxCount, setSimTxCount] = useState(0);
+  const [simUniqueTokens, setSimUniqueTokens] = useState(0);
+  const [simDaysSinceLastTx, setSimDaysSinceLastTx] = useState(30);
+  const [simHasSTRK, setSimHasSTRK] = useState(false);
+  const [simHasUSDC, setSimHasUSDC] = useState(false);
+
+  useEffect(() => {
+    if (metrics) {
+      setSimWalletAge(metrics.walletAgeDays || 0);
+      setSimTxCount(Math.min(metrics.txCount || 0, 200));
+      setSimUniqueTokens(metrics.uniqueTokens || 0);
+      setSimDaysSinceLastTx(metrics.daysSinceLastTx ?? 30);
+      setSimHasSTRK(metrics.hasSTRK || false);
+      setSimHasUSDC(metrics.hasUSDC || false);
+    }
+  }, [metrics]);
 
   const loadingMessages = [
     "Scanning the chain...",
@@ -200,6 +380,10 @@ export default function ScoreContent({ params, searchParams }: Props) {
     return "Poor";
   };
 
+  const getCreditScoreTier = (): string => {
+    return getScoreTier();
+  };
+
   const getScoreGlow = (): string => {
     const scoreNum = score || 0;
     if (scoreNum >= 750) return "score-ring-green";
@@ -207,6 +391,26 @@ export default function ScoreContent({ params, searchParams }: Props) {
     if (scoreNum >= 550) return "score-ring-yellow";
     return "score-ring-red";
   };
+
+  const tierColors: Record<string, string> = {
+    'Excellent': '#f59e0b',
+    'Very Good': '#7c3aed',
+    'Good': '#0891b2',
+    'Fair': '#EC5728',
+    'Poor': '#ef4444',
+  };
+
+  const simulatedScore = calculateScore({
+    walletAgeDays: simWalletAge,
+    txCount: simTxCount,
+    uniqueTokens: simUniqueTokens,
+    daysSinceLastTx: simDaysSinceLastTx,
+    hasSTRK: simHasSTRK,
+    hasUSDC: simHasUSDC,
+    firstTxDate: simWalletAge > 0 ? new Date(Date.now() - simWalletAge * 24 * 60 * 60 * 1000) : null,
+  });
+
+  const scoreDiff = simulatedScore - (score || 0);
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-slate-100 flex flex-col">
@@ -247,111 +451,92 @@ export default function ScoreContent({ params, searchParams }: Props) {
       </header>
 
       <main className="flex-grow">
-        <div className="relative w-full h-[300px] overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-blue-600/10 to-orange-500/10"></div>
-          <div className="absolute inset-0 dna-canvas-glow">
-            {metrics && (
-              <WalletDNA
-                address={address}
-                metrics={metrics}
-                score={score}
-                size={800}
-              />
-            )}
-          </div>
-          <div className="absolute inset-0 flex flex-col items-center justify-center px-4">
-            <div className="text-center mb-4">
-              <span className="px-3 py-1 rounded-full bg-primary/20 text-primary text-xs font-bold uppercase tracking-widest border border-primary/30">
-                On-Chain Identity
-              </span>
-            </div>
-            <button
-              onClick={handleCopyAddress}
-              className="text-slate-400 text-sm font-mono hover:text-primary transition-colors flex items-center gap-2"
-            >
-              {address.slice(0, 10)}...{address.slice(-8)}
-              {copied && (
-                <span className="text-green-400 text-xs">Copied!</span>
-              )}
-            </button>
-          </div>
-        </div>
-
-        <div className="max-w-4xl mx-auto -mt-32 relative z-10 px-4 pb-12">
-          <div className="flex flex-col items-center">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="relative flex flex-col md:flex-row gap-8 items-start mt-8 mb-12">
+            <div
+              className="absolute left-0 top-0 w-[180px] h-[600px] pointer-events-none z-0"
+              style={{
+                background: `radial-gradient(ellipse at left center, ${score >= 700 ? 'rgba(236, 87, 40, 0.15)' : 'rgba(124, 58, 237, 0.15)'} 0%, transparent 70%)`
+              }}
+            ></div>
+            <div
+              className="absolute right-0 top-0 w-[180px] h-[600px] pointer-events-none z-0"
+              style={{
+                background: `radial-gradient(ellipse at right center, ${score >= 700 ? 'rgba(236, 87, 40, 0.15)' : 'rgba(124, 58, 237, 0.15)'} 0%, transparent 70%)`
+              }}
+            ></div>
             <motion.div
-              className={`relative size-64 md:size-80 flex items-center justify-center rounded-full bg-[#0a0a0f] border-4 border-primary/40 ${getScoreGlow()}`}
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
+              className="relative z-10 flex-1 max-w-[380px]"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <div className="absolute inset-2 border-2 border-dashed border-primary/20 rounded-full"></div>
-              <div className="text-center">
-                <motion.h1
-                  className="text-7xl md:text-8xl font-bold tracking-tighter"
-                  style={{ color: "#EC5728" }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 1.5 }}
-                >
-                  <CountUpScore score={score} />
-                </motion.h1>
-                <motion.p
-                  className="font-bold uppercase tracking-[0.2em] text-sm mt-2"
-                  style={{ color: score >= 750 ? "#EC5728" : "#7c3aed" }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1.5, duration: 0.5 }}
-                >
-                  {getScoreTier()}
-                </motion.p>
-              </div>
-              <svg
-                className="absolute inset-0 w-full h-full -rotate-90"
-                viewBox="0 0 100 100"
+              <CreditScoreCard
+                score={score}
+                tier={getCreditScoreTier()}
+                personalityType={personality?.type || "Analyzing..."}
+                walletAddress={address}
+                fromCache={fromCache}
               >
-                <circle
-                  className="text-primary/10"
-                  cx="50"
-                  cy="50"
-                  fill="transparent"
-                  r="48"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <motion.circle
-                  className="text-primary"
-                  cx="50"
-                  cy="50"
-                  fill="transparent"
-                  r="48"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  strokeDasharray="301"
-                  initial={{ strokeDashoffset: 301 }}
-                  animate={{
-                    strokeDashoffset: 301 - Math.round(301 * (score / 850)),
-                  }}
-                  transition={{ duration: 1.5, ease: "easeOut" }}
-                />
-              </svg>
+                {metrics && (
+                  <WalletDNA
+                    address={address}
+                    metrics={metrics}
+                    score={score}
+                    size={300}
+                  />
+                )}
+              </CreditScoreCard>
             </motion.div>
 
-            <div className="mt-10 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
+            <motion.div
+              className="relative z-10 flex-1 flex flex-col"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+            >
+              <span className="px-3 py-1 rounded-full bg-primary/20 text-primary text-xs font-bold uppercase tracking-widest border border-primary/30 inline-block mb-4 w-fit">
+                On-Chain Identity
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
                 The{" "}
                 <span className="text-gradient">
                   {personality?.type || "Mystery"}
                 </span>
               </h2>
-              <p className="text-slate-400 max-w-md mx-auto">
-                {personality?.description || "Analyzing wallet personality..."}
-              </p>
-            </div>
-          </div>
+              {personality?.description && (
+                <p className="text-slate-400 max-w-md mb-6">
+                  {personality.description}
+                </p>
+              )}
 
+              {metrics && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-primary/10 border border-primary/20 rounded-xl px-4 py-3">
+                    <p className="text-slate-400 text-xs">Wallet Age</p>
+                    <p className="text-white font-bold">{metrics.walletAgeDays || 0} Days</p>
+                  </div>
+                  <div className="bg-primary/10 border border-primary/20 rounded-xl px-4 py-3">
+                    <p className="text-slate-400 text-xs">Transactions</p>
+                    <p className="text-white font-bold">{metrics.txCount?.toLocaleString() || "0"}</p>
+                  </div>
+                  <div className="bg-primary/10 border border-primary/20 rounded-xl px-4 py-3">
+                    <p className="text-slate-400 text-xs">STRK Balance</p>
+                    <p className="text-white font-bold">{(parseFloat(metrics.strkBalance || "0") / 1e18).toFixed(2)}</p>
+                  </div>
+                  <div className="bg-primary/10 border border-primary/20 rounded-xl px-4 py-3">
+                    <p className="text-slate-400 text-xs">Days Inactive</p>
+                    <p className="text-white font-bold">{metrics.daysSinceLastTx !== null ? metrics.daysSinceLastTx : "—"}</p>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        </div>
+
+        <div className="max-w-4xl mx-auto px-4 pb-12">
           {metrics && (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-16 mb-12">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-8 mb-12">
               <MetricCard
                 icon={<Calendar className="w-5 h-5" />}
                 label="Wallet Age"
@@ -485,6 +670,196 @@ export default function ScoreContent({ params, searchParams }: Props) {
             </motion.div>
           )}
 
+          {metrics && (
+            <motion.div
+              className="mt-4 mb-12 bg-primary/5 border border-primary/10 rounded-2xl p-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 2.3, duration: 0.4 }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <span>🧪</span>
+                  Score Simulator — what if?
+                </h3>
+                <button
+                  onClick={() => setShowSimulator(!showSimulator)}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    showSimulator
+                      ? "bg-primary text-white"
+                      : "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20"
+                  }`}
+                >
+                  {showSimulator ? "Hide" : "Simulate"}
+                </button>
+              </div>
+
+              {showSimulator && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-6"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm text-slate-300">Wallet Age</label>
+                        <span className="text-sm text-primary font-medium">{simWalletAge} days</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="730"
+                        step="30"
+                        value={simWalletAge}
+                        onChange={(e) => setSimWalletAge(parseInt(e.target.value))}
+                        className="w-full h-2 bg-primary/20 rounded-lg appearance-none cursor-pointer accent-primary"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm text-slate-300">Transaction Count</label>
+                        <span className="text-sm text-primary font-medium">{simTxCount}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="200"
+                        step="5"
+                        value={simTxCount}
+                        onChange={(e) => setSimTxCount(parseInt(e.target.value))}
+                        className="w-full h-2 bg-primary/20 rounded-lg appearance-none cursor-pointer accent-primary"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm text-slate-300">Unique Tokens</label>
+                        <span className="text-sm text-primary font-medium">{simUniqueTokens}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="6"
+                        step="1"
+                        value={simUniqueTokens}
+                        onChange={(e) => setSimUniqueTokens(parseInt(e.target.value))}
+                        className="w-full h-2 bg-primary/20 rounded-lg appearance-none cursor-pointer accent-primary"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm text-slate-300">Days Since Last Tx</label>
+                        <span className="text-sm text-primary font-medium">{simDaysSinceLastTx} days</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="90"
+                        step="5"
+                        value={simDaysSinceLastTx}
+                        onChange={(e) => setSimDaysSinceLastTx(parseInt(e.target.value))}
+                        className="w-full h-2 bg-primary/20 rounded-lg appearance-none cursor-pointer accent-primary"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <label className="text-sm text-slate-300">Has STRK</label>
+                      <button
+                        onClick={() => setSimHasSTRK(!simHasSTRK)}
+                        className={`w-10 h-5 rounded-full transition-all ${
+                          simHasSTRK ? "bg-primary" : "bg-primary/20"
+                        }`}
+                      >
+                        <div
+                          className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                            simHasSTRK ? "translate-x-5" : "translate-x-0.5"
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <label className="text-sm text-slate-300">Has USDC</label>
+                      <button
+                        onClick={() => setSimHasUSDC(!simHasUSDC)}
+                        className={`w-10 h-5 rounded-full transition-all ${
+                          simHasUSDC ? "bg-primary" : "bg-primary/20"
+                        }`}
+                      >
+                        <div
+                          className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                            simHasUSDC ? "translate-x-5" : "translate-x-0.5"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-primary/10 pt-6">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div>
+                          <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Simulated Score</p>
+                          <div className="flex items-baseline gap-3">
+                            <motion.span
+                              className="text-4xl font-bold"
+                              style={{ color: tierColors[getScoreTierFromLib(simulatedScore)] || tierColors["Good"] }}
+                              key={simulatedScore}
+                              initial={{ scale: 1.2, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                            >
+                              <CountUpScore score={simulatedScore} />
+                            </motion.span>
+                            <span
+                              className="px-2 py-0.5 text-xs font-semibold rounded"
+                              style={{
+                                backgroundColor: `${tierColors[getScoreTierFromLib(simulatedScore)]}20`,
+                                color: tierColors[getScoreTierFromLib(simulatedScore)],
+                                border: `1px solid ${tierColors[getScoreTierFromLib(simulatedScore)]}40`,
+                              }}
+                            >
+                              {getScoreTierFromLib(simulatedScore)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-4">
+                        <div
+                          className={`text-lg font-bold ${
+                            scoreDiff >= 0 ? "text-green-400" : "text-red-400"
+                          }`}
+                        >
+                          {scoreDiff >= 0 ? "+" : ""}
+                          {scoreDiff} points
+                        </div>
+                        <button
+                          onClick={() => {
+                            setSimWalletAge(metrics.walletAgeDays || 0);
+                            setSimTxCount(Math.min(metrics.txCount || 0, 200));
+                            setSimUniqueTokens(metrics.uniqueTokens || 0);
+                            setSimDaysSinceLastTx(metrics.daysSinceLastTx ?? 30);
+                            setSimHasSTRK(metrics.hasSTRK || false);
+                            setSimHasUSDC(metrics.hasUSDC || false);
+                          }}
+                          className="px-4 py-2 bg-primary/10 border border-primary/20 rounded-lg text-sm text-primary font-medium hover:bg-primary/20 transition-all"
+                        >
+                          Reset
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+
           {metrics && showStakePanel && !staked && (
             <div className="border-gradient-purple rounded-2xl p-8 mb-12">
               <StakePanel
@@ -602,7 +977,7 @@ export default function ScoreContent({ params, searchParams }: Props) {
             </motion.div>
             <a
               href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                `My Starknet wallet is a ${personality?.type || "mystery"} with a credit score of ${score} 👀 Check yours: https://starknet-creditscore.vercel.app/score/${address} #Starknet #StarkzapChallenge`,
+                `My Starknet wallet is a ${personality?.type || "mystery"} with a credit score of ${score} 👀 Check yours: https://starknet-credit-score.vercel.app/score/${address} #Starknet #StarkzapChallenge`,
               )}`}
               target="_blank"
               rel="noopener noreferrer"

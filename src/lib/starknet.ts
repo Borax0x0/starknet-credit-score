@@ -1,4 +1,5 @@
 import { RpcProvider, num } from "starknet";
+import { StarkZap } from "starkzap";
 
 export interface WalletMetrics {
   walletAgeDays: number;
@@ -14,47 +15,17 @@ export interface WalletMetrics {
   isRetry?: boolean;
 }
 
-// Starkscan API URL
 const STARKSCAN_API_URL = "https://api.starkscan.co/api/v0";
 
-// Token contract addresses on Starknet mainnet with their specific ABI entrypoints
-const TOKENS: Record<
-  string,
-  { address: string; selector: "balanceOf" | "balance_of" }
-> = {
-  STRK: {
-    address:
-      "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
-    selector: "balance_of",
-  },
-  USDC_BRIDGED: {
-    address:
-      "0x053c91253bc968ea04923acd23c8f5f8dbd2e6e38f11f7164d18c30350bc3d49",
-    selector: "balanceOf",
-  },
-  USDC_NATIVE: {
-    address:
-      "0x033068f6539f8e6e6b131e6b2b814e6c34a5224bc66947c47dab9dfee93b35fb",
-    selector: "balanceOf",
-  },
-  ETH: {
-    address:
-      "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
-    selector: "balanceOf",
-  },
-  USDT: {
-    address:
-      "0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8",
-    selector: "balanceOf",
-  },
-  WBTC: {
-    address:
-      "0x03fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac",
-    selector: "balanceOf",
-  },
+const TOKEN_ADDRESSES = {
+  STRK: "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+  USDC_BRIDGED: "0x053c91253bc968ea04923acd23c8f5f8dbd2e6e38f11f7164d18c30350bc3d49",
+  USDC_NATIVE: "0x033068f6539f8e6e6b131e6b2b814e6c34a5224bc66947c47dab9dfee93b35fb",
+  ETH: "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
+  USDT: "0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8",
+  WBTC: "0x03fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac",
 };
 
-// Starknet mainnet RPC (User-configured or dRPC fallback)
 const MAINNET_RPC =
   process.env.NEXT_PUBLIC_STARKNET_RPC_URL || "https://starknet.drpc.org";
 const SEPOLIA_RPC =
@@ -66,39 +37,25 @@ function getProvider(network: string = "mainnet") {
   return new RpcProvider({ nodeUrl: rpcUrl });
 }
 
-/**
- * Fetch a token balance using provider.callContract.
- * Uses the specific ABI entrypoint mapped to the token.
- */
 async function getTokenBalance(
-  token: { address: string; selector: "balanceOf" | "balance_of" },
+  tokenAddress: string,
   walletAddress: string,
-  network: string = "mainnet",
+  network: "mainnet" | "sepolia" = "mainnet",
 ): Promise<bigint> {
-  const rpcProvider = getProvider(network);
   try {
-    const result = await rpcProvider.callContract({
-      contractAddress: token.address,
-      entrypoint: token.selector,
-      calldata: [walletAddress],
-    });
-
-    if (result && result.length >= 2) {
-      const low = BigInt(result[0]);
-      const high = BigInt(result[1]);
-      return low + (high << 128n);
-    } else if (result && result.length === 1) {
-      return BigInt(result[0]);
+    const sdk = new StarkZap({ network });
+    const balance = await (sdk as any).balanceOf(walletAddress, tokenAddress);
+    if (balance) {
+      return BigInt(balance.toString());
     }
   } catch {
-    // Silently handle token balance errors (token not held or contract issues)
+    // StarkZap SDK throws on unsupported tokens — return 0 as fallback
   }
   return 0n;
 }
 
-/**
- * Find the block a contract was deployed by binary searching getClassHashAt
- */
+// Binary searches getClassHashAt to find the first block a contract existed at.
+// Converges in ~10 iterations (O(log n) over 500k block window).
 async function findDeploymentBlock(
   address: string,
   latestBlockNum: number,
@@ -110,27 +67,21 @@ async function findDeploymentBlock(
   let deployedBlock: number | null = null;
   let iterations = 0;
 
-  // binary search to find the exact deployment block (takes ~20 RPC calls = < 2 seconds)
   while (low <= high && iterations < 10) {
     iterations++;
     const mid = Math.floor((low + high) / 2);
     try {
       await rpcProvider.getClassHashAt(address, mid);
-      // It existed at 'mid', so it might have been deployed earlier
       deployedBlock = mid;
       high = mid - 1;
     } catch {
-      // It didn't exist at 'mid', so it must be deployed later
       low = mid + 1;
     }
   }
   return deployedBlock;
 }
 
-/**
- * Fetch wallet metrics from Starknet using starknet.js RpcProvider.
- * Uses nonce as a tx count proxy (standard RPC, no API key needed).
- */
+// Nonce is used as tx count — it's the account's next tx number, available via standard RPC without an API key.
 export async function getWalletMetrics(
   address: string,
   network: string = "mainnet",
@@ -141,13 +92,11 @@ export async function getWalletMetrics(
     ? new RpcProvider({ nodeUrl: rpcUrl })
     : getProvider(network);
 
-  // Normalize address — pad to full 66-char Starknet format (0x + 64 hex digits)
-  // Important: num.toHex strips leading zeros which breaks RPC lookups for addresses like 0x00adce...
+  // num.toHex strips leading zeros — pad manually to the full 66-char format RPC expects
   const rawHex = num.toHex(num.toBigInt(address));
   const normalizedAddress = "0x" + rawHex.slice(2).padStart(64, "0");
 
-  // 1. Check if the account is deployed (has a class hash)
-  // Retry logic to handle RPC inconsistencies
+  // 3 attempts with 500ms backoff — RPC nodes occasionally return stale state
   let isDeployed = false;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
@@ -155,15 +104,13 @@ export async function getWalletMetrics(
       isDeployed = true;
       break;
     } catch {
-      if (attempt === 2) {
-        // Final attempt failed, wallet will be treated as not deployed
-      } else {
+      if (attempt < 2) {
         await new Promise((resolve) => setTimeout(resolve, 500));
       }
     }
   }
 
-  // 2. Get nonce (= number of transactions sent from this account)
+  // Nonce = total txs sent from this account (hex string from RPC)
   let txCount = 0;
   if (isDeployed) {
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -184,36 +131,37 @@ export async function getWalletMetrics(
     }
   }
 
-  // 3. Get token balances using proper callContract for top tokens
+  // Token balances via StarkZap SDK — USDC includes both bridged and native variants
+  const networkType = network as "mainnet" | "sepolia";
   const strkBalanceRaw = await getTokenBalance(
-    TOKENS.STRK,
+    TOKEN_ADDRESSES.STRK,
     normalizedAddress,
-    network,
+    networkType,
   );
   const usdcBridgedBalanceRaw = await getTokenBalance(
-    TOKENS.USDC_BRIDGED,
+    TOKEN_ADDRESSES.USDC_BRIDGED,
     normalizedAddress,
-    network,
+    networkType,
   );
   const usdcNativeBalanceRaw = await getTokenBalance(
-    TOKENS.USDC_NATIVE,
+    TOKEN_ADDRESSES.USDC_NATIVE,
     normalizedAddress,
-    network,
+    networkType,
   );
   const ethBalanceRaw = await getTokenBalance(
-    TOKENS.ETH,
+    TOKEN_ADDRESSES.ETH,
     normalizedAddress,
-    network,
+    networkType,
   );
   const usdtBalanceRaw = await getTokenBalance(
-    TOKENS.USDT,
+    TOKEN_ADDRESSES.USDT,
     normalizedAddress,
-    network,
+    networkType,
   );
   const wbtcBalanceRaw = await getTokenBalance(
-    TOKENS.WBTC,
+    TOKEN_ADDRESSES.WBTC,
     normalizedAddress,
-    network,
+    networkType,
   );
 
   const usdcCombinedBalanceRaw = usdcBridgedBalanceRaw + usdcNativeBalanceRaw;
@@ -230,10 +178,9 @@ export async function getWalletMetrics(
   const hasSTRK = strkBalanceRaw > 0n;
   const hasUSDC = usdcCombinedBalanceRaw > 0n;
 
-  // We assign just the combined balance to usdcBalanceRaw
   const usdcBalanceRaw = usdcCombinedBalanceRaw;
 
-  // 4. Estimate wallet age and last activity using Starkscan API
+  // Wallet age: Starkscan API if key is present, binary RPC block search otherwise
   let walletAgeDays = 0;
   let daysSinceLastTx: number | null = null;
   let firstTxDate: Date | null = null;
@@ -244,7 +191,7 @@ export async function getWalletMetrics(
     const starkscanKey = process.env.STARKSCAN_API_KEY;
 
     if (starkscanKey) {
-      // Fetch stats from Starkscan (this includes exact tx count)
+
       const res = await fetch(
         `${STARKSCAN_API_URL}/transactions?contract_address=${normalizedAddress}&limit=1`,
         {
@@ -260,7 +207,6 @@ export async function getWalletMetrics(
         const items = data.data || [];
 
         if (items.length > 0) {
-          // Latest transaction gives us last activity
           const latestTx = items[0];
           lastActivityDate = new Date(latestTx.timestamp * 1000);
           daysSinceLastTx = Math.floor(
@@ -268,8 +214,7 @@ export async function getWalletMetrics(
               (1000 * 60 * 60 * 24),
           );
 
-          // Get the exact transaction count from Starknet JS nonce (since Starkscan doesn't return total count in this endpoint easily)
-          // Actually, we'll fetch the *oldest* transaction to get true wallet age
+          // Fetch oldest tx to derive wallet age from first-seen timestamp
           const oldestRes = await fetch(
             `${STARKSCAN_API_URL}/transactions?contract_address=${normalizedAddress}&limit=1&sort_desc=false`,
             {
@@ -295,12 +240,10 @@ export async function getWalletMetrics(
       }
     } else {
       try {
-        // Confirm the wallet exists
         await rpcProvider.getClassHashAt(normalizedAddress, "latest");
 
         const latestBlock = await rpcProvider.getBlock("latest");
 
-        // Find exact deployment block
         const deployedBlock = await findDeploymentBlock(
           normalizedAddress,
           latestBlock.block_number,
@@ -308,7 +251,6 @@ export async function getWalletMetrics(
         );
 
         if (deployedBlock !== null && latestBlock.block_number) {
-          // Get exact deployment block timestamp for true age calculation
           const deploymentBlockData = await rpcProvider.getBlock(deployedBlock);
 
           if (deploymentBlockData && "timestamp" in deploymentBlockData) {
@@ -317,7 +259,7 @@ export async function getWalletMetrics(
             walletAgeDays = Math.floor(secondsElapsed / (60 * 60 * 24));
             firstTxDate = new Date(deploymentBlockData.timestamp * 1000);
           } else {
-            // Fallback to 6s estimate if timestamp missing from older blocks
+            // Some older blocks lack timestamps — estimate at ~6s per block
             const blocksElapsed = latestBlock.block_number - deployedBlock;
             const secondsElapsed = blocksElapsed * 6;
             walletAgeDays = Math.floor(secondsElapsed / (60 * 60 * 24));
@@ -325,21 +267,17 @@ export async function getWalletMetrics(
           }
         }
       } catch {
-        // Binary search failed, will use fallback age calculation
+        // Deployment block search failed — activity heuristics below will apply
       }
 
-      // Fallback heuristics for activity
-      // Since we don't know exactly when their LAST transaction was without an API,
-      // using hardcoded heuristic values is too detached from reality.
-      // Since `getClassHashAt` confirms existence, we'll keep the heuristic
-      // but scale it way down so active wallets aren't penalized with "7 days inactive".
+      // Without a Starkscan key, last-tx date is unknown — derive activity from tx volume
       if (isDeployed && txCount > 0) {
         if (walletAgeDays === 0) {
           walletAgeDays = Math.min(txCount * 3, 730);
         }
 
         if (txCount > 1000) {
-          daysSinceLastTx = 0; // highly active, assume today
+          daysSinceLastTx = 0;
         } else if (hasSTRK || hasUSDC || uniqueTokens > 1) {
           daysSinceLastTx = Math.min(Math.floor(txCount / 50), 30);
         } else {

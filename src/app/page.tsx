@@ -45,19 +45,19 @@ export default function Home() {
     { 
       icon: <TrendingUp className="w-7 h-7" />, 
       title: 'On-chain Activity', 
-      desc: 'Analysis of transaction frequency, volume, and smart contract interactions over time to verify human behavior.',
+      desc: 'Wallet age, transaction count, and recent activity analyzed directly from Starknet mainnet using live RPC data.',
       weight: 'Weight: 40%'
     },
     { 
       icon: <Wallet className="w-7 h-7" />, 
-      title: 'DeFi Reputation', 
-      desc: 'Evaluation of liquidity provision, lending history, and yield farming stability across major Starknet protocols.',
+      title: 'Asset Portfolio', 
+      desc: 'Token diversity and asset holdings across STRK, USDC, ETH, USDT and WBTC — the breadth of your Starknet portfolio signals financial maturity.',
       weight: 'Weight: 35%'
     },
     { 
       icon: <Fingerprint className="w-7 h-7" />, 
-      title: 'Social Identity', 
-      desc: 'Verification of cross-chain identities, DAO participation, and community governance impact within the ecosystem.',
+      title: 'AI Personality', 
+      desc: 'An AI-generated personality profile based on your unique on-chain behavior — from Diamond Hands to DeFi Degen, your wallet tells a story.',
       weight: 'Weight: 25%'
     },
   ];
@@ -111,10 +111,10 @@ export default function Home() {
           </div>
           <div className="max-w-[1200px] mx-auto grid lg:grid-cols-2 gap-8 md:gap-12 items-center">
             <div className="flex flex-col gap-6 md:gap-8 text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EC5728]/10 border border-[#EC5728]/20 text-[#EC5728] text-xs font-bold uppercase tracking-widest w-fit">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2cff05]/10 border border-[#2cff05]/20 text-[#2cff05] text-xs font-bold uppercase tracking-widest w-fit">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#EC5728] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#EC5728]"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2cff05] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#2cff05]"></span>
                 </span>
                 Starknet Mainnet Live
               </div>
@@ -172,7 +172,7 @@ export default function Home() {
           <div className="max-w-[1200px] mx-auto flex flex-col gap-8 md:gap-16">
             <div className="flex flex-col gap-3 md:gap-4 text-center items-center">
               <h2 className="text-2xl md:text-3xl lg:text-5xl font-bold tracking-tight">Core Reputation Metrics</h2>
-              <p className="text-sm md:text-lg text-slate-400 max-w-2xl">Our algorithm processes thousands of data points across the Starknet ecosystem to determine your credibility.</p>
+              <p className="text-sm md:text-lg text-slate-400 max-w-2xl">Six on-chain metrics analyzed in real-time from Starknet mainnet to generate your unique credit score.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">

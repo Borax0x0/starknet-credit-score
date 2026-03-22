@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
           getWalletMetrics(address, network, rpcUrl),
           RPC_TIMEOUT,
         );
-        break; // success, stop trying more endpoints
+        break;
       } catch (error) {
         lastRpcError = error;
         if (error instanceof Error && error.message === "RPC timeout, please retry") {
@@ -56,7 +56,6 @@ export async function GET(request: NextRequest) {
             { status: 503 },
           );
         }
-        // try next endpoint
       }
     }
 
@@ -77,7 +76,7 @@ export async function GET(request: NextRequest) {
           metrics.isRetry = true;
         }
       } catch {
-        // Retry failed or timed out — use original metrics
+        // Retry failed — continue with first-pass metrics
       }
     }
 
@@ -105,7 +104,8 @@ export async function GET(request: NextRequest) {
             tx_count: metrics.txCount || 0,
             strk_balance: strkBalance,
             usdc_balance: usdcBalance,
-            created_at: new Date().toISOString(),
+            unique_tokens: metrics.uniqueTokens || 0,
+            days_since_last_tx: metrics.daysSinceLastTx ?? null,
           },
           { onConflict: "address" },
         );

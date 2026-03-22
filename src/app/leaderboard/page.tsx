@@ -16,11 +16,11 @@ interface LeaderboardEntry {
 }
 
 const tierColors: Record<string, string> = {
-  'Excellent': 'text-green-400',
-  'Very Good': 'text-blue-400',
-  'Good': 'text-blue-400',
-  'Fair': 'text-yellow-400',
-  'Poor': 'text-red-400',
+  'Excellent': '#f59e0b',
+  'Very Good': '#7c3aed',
+  'Good': '#0891b2',
+  'Fair': '#EC5728',
+  'Poor': '#ef4444',
 };
 
 export default function LeaderboardPage() {
@@ -112,10 +112,10 @@ export default function LeaderboardPage() {
                     </div>
 
                     <div className="text-right">
-                      <p className="text-2xl font-bold" style={{ color: entry.score >= 750 ? '#22c55e' : entry.score >= 650 ? '#3b82f6' : entry.score >= 550 ? '#eab308' : '#ef4444' }}>
+                      <p className="text-2xl font-bold" style={{ color: tierColors[entry.tier] || '#7c3aed' }}>
                         {entry.score}
                       </p>
-                      <p className={`text-xs font-medium ${tierColors[entry.tier] || 'text-slate-400'}`}>
+                      <p className="text-xs font-medium" style={{ color: tierColors[entry.tier] || '#7c3aed' }}>
                         {entry.tier}
                       </p>
                     </div>
